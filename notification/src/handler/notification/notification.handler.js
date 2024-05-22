@@ -41,7 +41,6 @@ async function processNotification(
                     break
                 case 'standalone_fraud_check_success':
                 case 'standalone_fraud_check_failed':
-                case 'standalone_fraud_check_in_review':
                 case 'standalone_fraud_check_in_review_approved':
                 case 'standalone_fraud_check_in_review_declined':
                 case 'standalone_fraud_check_in_review_async_approved':
