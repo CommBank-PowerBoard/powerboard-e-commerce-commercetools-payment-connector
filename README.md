@@ -14,11 +14,21 @@ Both modules are essential for the seamless integration of commercetools and Pow
 
 Ensure you have the following prerequisites before proceeding with installation:
 
-- Docker installed on your machine.
+- Docker and docker-compose installed on your machine.
 - An active commercetools account with API credentials.
 - Git installed on your machine.
 
+#
+
 ## Installation Instructions
+
+In this manual you have **two ways** to do this. With `docker run...` and `docker-compose`
+
+#
+
+---
+- ### With `docker run...`:
+---
 
 ### Step 1: Clone the Repository
 
@@ -26,6 +36,10 @@ Ensure you have the following prerequisites before proceeding with installation:
 git clone https://github.com/PayDock/e-commerce-powerboard-commercetools-payment-connector
 ```
 
+and navigate to the project-directory
+```
+cd e-commerce-powerboard-commercetools-payment-connector
+```
 
 ### Step 2: Configure Environment Variables
 
@@ -33,14 +47,13 @@ git clone https://github.com/PayDock/e-commerce-powerboard-commercetools-payment
 Navigate to the extension directory and set up the environment variables:
 
 ```
-cd e-commerce-commercetools-payment-connector/extension
-echo 'PowerBoard_INTEGRATION_CONFIG={
+echo 'POWERBOARD_INTEGRATION_CONFIG={
    "clientId":"[YOUR_CLIENT_ID]",
    "clientSecret":"[YOUR_CLIENT_SECRET]",
    "projectKey":"[YOUR_PROJECT_KEY]",
    "apiUrl":"https://api.[REGION_ID].gcp.commercetools.com",
    "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com"
-}' > .env
+}' > ./extension/.env
 ```
 
 
@@ -51,26 +64,103 @@ Replace the placeholder values with your actual Commercetools API credentials.
 Navigate to the notification directory and set up the environment variables:
 
 ```
-cd e-commerce-commercetools-payment-connector/notification
-echo 'PowerBoard_INTEGRATION_CONFIG={
+echo 'POWERBOARD_INTEGRATION_CONFIG={
    "clientId":"[YOUR_CLIENT_ID]",
    "clientSecret":"[YOUR_CLIENT_SECRET]",
    "projectKey":"[YOUR_PROJECT_KEY]",
    "apiUrl":"https://api.[REGION_ID].gcp.commercetools.com",
    "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com"
-}' > .env
+}' > ./notification/.env
+```
+
+Replace the placeholder values with your actual Commercetools API credentials.
+
+### Step 3: Build the docker images and run the application
+
+Build the docker images:
+
+- `docker build -t commercetools-payment-connector-extention -f cnf/extension/Dockerfile .`
+
+- `docker build -t commercetools-payment-connector-notification -f cnf/notification/Dockerfile .`
+
+and launch the Docker container with the following command:
+
+- `docker run -e POWERBOARD_INTEGRATION_CONFIG=xxxxxx -p 8082:8082 commercetools-payment-connector-extention`
+
+- `docker run -e POWERBOARD_INTEGRATION_CONFIG=xxxxxx -p 8443:8443 commercetools-payment-connector-notification`
+
+(Replace the placeholder `xxxxxx` for POWERBOARD_INTEGRATION_CONFIG variable  with your Json-escapes string)
+###
+The Extension Module will be accessible at: http://your_domain:8082
+
+The Notification Module will be accessible at: http://your_domain:8443
+
+#
+
+---
+- ### With `docker-compose`:
+---
+
+### Step 1: Clone the Repository
+
+```
+git clone https://github.com/PayDock/e-commerce-powerboard-commercetools-payment-connector
+```
+
+and navigate to the project-directory
+```
+cd e-commerce-powerboard-commercetools-payment-connector
+```
+
+### Step 2: Configure Environment Variables
+
+- #### For the Extension Module
+Navigate to the extension directory and set up the environment variables:
+
+```
+echo 'POWERBOARD_INTEGRATION_CONFIG={
+   "clientId":"[YOUR_CLIENT_ID]",
+   "clientSecret":"[YOUR_CLIENT_SECRET]",
+   "projectKey":"[YOUR_PROJECT_KEY]",
+   "apiUrl":"https://api.[REGION_ID].gcp.commercetools.com",
+   "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com"
+}' > ./extension/.env
+```
+
+
+Replace the placeholder values with your actual Commercetools API credentials.
+
+
+- #### For the Notification Module
+Navigate to the notification directory and set up the environment variables:
+
+```
+echo 'POWERBOARD_INTEGRATION_CONFIG={
+   "clientId":"[YOUR_CLIENT_ID]",
+   "clientSecret":"[YOUR_CLIENT_SECRET]",
+   "projectKey":"[YOUR_PROJECT_KEY]",
+   "apiUrl":"https://api.[REGION_ID].gcp.commercetools.com",
+   "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com"
+}' > ./notification/.env
 ```
 
 Replace the placeholder values with your actual Commercetools API credentials.
 
 
-### Step 3: Run the Application
-Launch the Docker container with the following command:
+
+### Step 3: Build the docker images and run the application
+
+- Replace the placeholder `xxxxxx` for POWERBOARD_INTEGRATION_CONFIG variable in **./docker-compose.yml** with your Json-escapes string.
+
+
+- Launch docker-compose, docker images will be built automatically:
 
 ```
-    docker run
+    docker-compose up -d
 ```
 
-- The Extension Module will be accessible at: http://your_domain:8082
-- The Notification Module will be accessible at: http://your_domain:8083
 
+###
+The Extension Module will be accessible at: http://your_domain:8082
+
+The Notification Module will be accessible at: http://your_domain:8443
