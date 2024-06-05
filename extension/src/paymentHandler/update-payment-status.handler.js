@@ -12,10 +12,13 @@ async function execute(paymentObject) {
     const actions = []
     const requestBodyJson = paymentExtensionRequest.request;
     const newStatus = requestBodyJson.newStatus;
+    const orderNumber = paymentObject.id;
     const oldStatus = paymentObject.custom.fields.PowerboardPaymentStatus;
     let chargeId = paymentObject.custom.fields?.PowerboardTransactionId;
     let errorMessage = null;
     let responseAPI;
+    let paymentStatus;
+    let orderStatus;
     let refundedAmount = 0;
     try {
         switch (newStatus) {
@@ -25,6 +28,8 @@ async function execute(paymentObject) {
                 }else{
                     errorMessage =  "Charge not found or not in the desired state";
                 }
+                paymentStatus = 'Paid'
+                orderStatus = 'Open'
                 break;
             case c.STATUS_TYPES.CANCELLED:
                 if (oldStatus === c.STATUS_TYPES.AUTHORIZE || oldStatus === c.STATUS_TYPES.PAID) {
@@ -32,6 +37,8 @@ async function execute(paymentObject) {
                 }else{
                     errorMessage =  "Charge not found or not in the desired state";
                 }
+                paymentStatus = 'Failed'
+                orderStatus = 'Cancelled'
                 break;
             case c.STATUS_TYPES.REFUNDED:
             case c.STATUS_TYPES.P_REFUND:
@@ -45,6 +52,8 @@ async function execute(paymentObject) {
                 }else{
                     errorMessage =  "Charge not found or not in the desired state";
                 }
+                paymentStatus = 'Paid'
+                orderStatus = 'Cancelled'
                 break;
             default:
                 throw new Error(`Unsupported status change from ${oldStatus} to ${newStatus}`);
@@ -93,9 +102,42 @@ async function execute(paymentObject) {
         message
     })
     actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE, response));
+    if(paymentStatus && orderStatus) {
+        await updateOrderStatus(orderNumber, paymentStatus, orderStatus)
+    }
     return {
         actions,
     }
 }
+
+
+async function updateOrderStatus(
+    id,
+    paymentStatus,
+    orderStatus
+) {
+    try {
+        const ctpClient = await config.getCtpClient()
+
+        let order = await ctpClient.fetchOrderByNymber(ctpClient.builder.orders, id)
+        if(order){
+            order = order.body
+            const updateOrderActions = [
+                {
+                    action: 'changePaymentState',
+                    paymentState: paymentStatus,
+                },
+                {
+                    action: 'changeOrderState',
+                    orderState: orderStatus
+                }
+            ]
+            await ctpClient.update(ctpClient.builder.orders, order.id, order.version, updateOrderActions)
+        }
+    } catch (error) {
+        console.log(error)
+    }
+}
+
 
 export default {execute}

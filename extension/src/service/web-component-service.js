@@ -363,7 +363,7 @@ async function cardFraud3DsInBuildCharge({configurations, input, amount, currenc
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
 
-    result.powerboardStatus = await getPowerboardStatusByAPIResponse(configurations, result.status);
+    result.powerboardStatus = await getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
     return result;
 }
 
@@ -534,7 +534,7 @@ async function cardFraudInBuild3DsStandaloneCharge({configurations, input, amoun
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
 
-    result.powerboardStatus = await getPowerboardStatusByAPIResponse(configurations, result.status);
+    result.powerboardStatus = await getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
 
 
     return result;
@@ -560,7 +560,8 @@ async function card3DsCharge({configurations, input, amount, currency, vaultToke
         })
     }
 
-    result.powerboardStatus = await getPowerboardStatusByAPIResponse(configurations, result.status);
+    const isDirectCharge = configurations.card_direct_charge === 'Enable';
+    result.powerboardStatus = await getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
 
     return result;
 }
@@ -735,10 +736,6 @@ async function cardFraudInBuildCharge({configurations, input, amount, currency, 
     } else {
         result.powerboardStatus = c.STATUS_TYPES.FAILED;
     }
-
-    result.powerboardStatus = await getPowerboardStatusByAPIResponse(configurations, result.status);
-
-
     return result;
 }
 
@@ -854,7 +851,7 @@ async function cardCustomerCharge({
         authorization: !isDirectCharge
     }
     const result = await createCharge(request, {directCharge: isDirectCharge});
-    result.powerboardStatus = await getPowerboardStatusByAPIResponse(configurations, result.status);
+    result.powerboardStatus = await getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
 
 
     return result;
@@ -891,7 +888,7 @@ async function cardCharge({configurations, input, amount, currency, vaultToken})
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
 
-    result.powerboardStatus = await getPowerboardStatusByAPIResponse(configurations, result.status);
+    result.powerboardStatus = await getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
 
 
     return result;
@@ -976,7 +973,7 @@ async function apmFlow({configurations, input, amount, currency, paymentSource, 
     }
 
     const result = await createCharge(request, {directCharge: isDirectCharge});
-    result.powerboardStatus = await getPowerboardStatusByAPIResponse(configurations, result.status);
+    result.powerboardStatus = await getPowerboardStatusByAPIResponse(isDirectCharge, result.status);
     return result;
 }
 
@@ -1394,13 +1391,16 @@ async function generatePowerboardUrlAction(url) {
 async function buildRequestPowerboard(requestObj, methodOverride) {
     const powerboardCredentials = await config.getPowerboardConfig('connection');
     let requestHeaders = {}
+
     if (powerboardCredentials.credentials_type === 'credentials') {
         requestHeaders = {
+            'X-Commercetools-Meta': 'V1.0.0_commercetools',
             'Content-Type': 'application/json',
             'x-user-secret-key': powerboardCredentials.credentials_secret_key
         }
     } else {
         requestHeaders = {
+            'X-Commercetools-Meta': 'V1.0.0_commercetools',
             'Content-Type': 'application/json',
             'x-access-token': powerboardCredentials.credentials_access_key
         }
@@ -1416,9 +1416,8 @@ async function buildRequestPowerboard(requestObj, methodOverride) {
     return request
 }
 
-async function getPowerboardStatusByAPIResponse(configurations, paymentStatus) {
+async function getPowerboardStatusByAPIResponse(isDirectCharge, paymentStatus) {
     let powerboardStatus = 'powerboard-failed'
-    const isDirectCharge = configurations.card_direct_charge === 'Enable';
     if (paymentStatus === 'Success') {
         if (isDirectCharge) {
             powerboardStatus = 'powerboard-paid';

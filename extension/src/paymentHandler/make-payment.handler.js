@@ -77,12 +77,54 @@ async function execute(paymentObject) {
         actions.push(addTransactionAction)
     }
 
-    customFieldsToDelete.push(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE)
+    if (powerboardStatus) {
+        const {orderState, orderPaymentState} = await getCommercetoolsStatusesByPowerboardStatus(powerboardStatus)
+        actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE, JSON.stringify({
+            orderPaymentStatus: orderPaymentState,
+            orderStatus: orderState
+        })));
+    } else {
+        customFieldsToDelete.push(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE)
+    }
+
     paymentActions = await  deleteCustomFields(actions, paymentObject, customFieldsToDelete)
     return {
         actions: paymentActions
     }
 }
+
+async function getCommercetoolsStatusesByPowerboardStatus(powerboardStatus) {
+    let orderPaymentState
+    let orderState
+
+    switch (powerboardStatus) {
+        case 'powerboard-paid':
+            orderPaymentState = 'Paid'
+            orderState = 'Open'
+            break
+        case 'powerboard-pending':
+        case 'powerboard-authorize':
+        case 'powerboard-requested':
+            orderPaymentState = 'Pending'
+            orderState = 'Open'
+            break
+        case 'powerboard-cancelled':
+        case 'powerboard-failed':
+            orderPaymentState = 'Failed'
+            orderState = 'Cancelled'
+            break
+        case 'powerboard-refunded':
+            orderPaymentState = 'Paid'
+            orderState = 'Cancelled'
+            break
+        default:
+            orderPaymentState = 'Pending'
+            orderState = 'Open'
+    }
+
+    return {orderState, orderPaymentState}
+}
+
 
 async function deleteCustomFields(actions, paymentObject, customFieldsToDelete) {
     const customFields = paymentObject?.custom?.fields;

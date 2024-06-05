@@ -1,7 +1,5 @@
 import {serializeError} from 'serialize-error'
 import httpUtils from '../../utils.js'
-import {getAuthorizationRequestHeader} from '../../validator/authentication.js'
-import paymentHandler from '../../paymentHandler/payment-handler.js'
 
 const logger = httpUtils.getLogger()
 
@@ -17,50 +15,35 @@ async function processRequest(request, response) {
                 errors: [
                     {
                         code: 'InvalidInput',
-                        message: 'Invalid HTTP method.',
+                        message: 'Invalid HTTP method',
                     },
                 ],
             },
         })
     }
-    let paymentObject = {}
+    let orderObject = {}
     try {
-        const authToken = getAuthorizationRequestHeader(request)
-        paymentObject = await _getPaymentObject(request)
-        const paymentExtensionRequest = paymentObject?.custom?.fields?.PaymentExtensionRequest ?? null;
-
-        const paymentResult = paymentExtensionRequest ? await paymentHandler.handlePaymentByExtRequest(
-            paymentObject,
-            authToken,
-        ) : await paymentHandler.handlePayment(
-            paymentObject,
-            authToken,
-        );
-
-        if (paymentResult === null) {
+        orderObject = await _getOrderObject(request)
+        if (orderObject.orderNumber) {
             return httpUtils.sendResponse({response, statusCode: 200, data: {actions: []}})
         }
-
         const result = {
             response,
-            statusCode: paymentResult.actions ? 200 : 400,
-            data: paymentResult.actions
-                ? paymentResult
-                : {errors: paymentResult.errors},
+            statusCode: 200,
+            data: {
+                actions: [{
+                    "action": "setOrderNumber",
+                    "orderNumber": orderObject.id
+                }]
+            }
         }
-
-        logger.debug('Data to be returned', JSON.stringify(result.data))
         return httpUtils.sendResponse(result)
     } catch (err) {
-        return httpUtils.sendResponse({
-            response,
-            statusCode: 400,
-            data: httpUtils.handleUnexpectedPaymentError(paymentObject, err),
-        })
+        return httpUtils.sendResponse({response, statusCode: 200, data: {actions: []}})
     }
 }
 
-async function _getPaymentObject(request) {
+async function _getOrderObject(request) {
     let body = {}
     try {
         body = await httpUtils.collectRequestData(request)

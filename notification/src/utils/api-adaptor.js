@@ -4,13 +4,26 @@ import config from '../config/config.js'
 async function callPowerboard(url, data, httpMethod) {
   const apiUrl = await config.getPowerboardApiUrl() + url
   const powerboardCredentials = await config.getPowerboardConfig('connection')
-  const requestOptions = {
-    method: httpMethod,
-    headers: {
+
+  let requestHeaders = {};
+  if (powerboardCredentials.credentials_type === 'credentials') {
+    requestHeaders = {
+      'X-Commercetools-Meta': 'V1.0.0_commercetools',
       'Content-Type': 'application/json',
       'x-user-secret-key': powerboardCredentials.credentials_secret_key
     }
+  } else {
+    requestHeaders = {
+      'X-Commercetools-Meta': 'V1.0.0_commercetools',
+      'Content-Type': 'application/json',
+      'x-access-token': powerboardCredentials.credentials_access_key
+    }
+  }
+  const requestOptions = {
+    method: httpMethod,
+    headers: requestHeaders
   };
+
   if (httpMethod !== 'GET' && data) {
      requestOptions.body = JSON.stringify(data); // Ensure the body is stringified for POST requests
   }

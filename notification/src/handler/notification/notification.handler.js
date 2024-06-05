@@ -62,7 +62,8 @@ async function processNotification(
 
 async function processWebhook(event, payment, notification, ctpClient) {
     const result = {}
-    const status = await getNewStatuses(notification)
+    const {status, paymentStatus, orderStatus} = await getNewStatuses(notification)
+
     const chargeId = notification._id
     const currentPayment = payment
     const currentVersion = payment.version
@@ -75,7 +76,7 @@ async function processWebhook(event, payment, notification, ctpClient) {
         {
             action: 'setCustomField',
             name: 'PowerboardPaymentStatus',
-            value: status.powerboard
+            value: status
         },
         {
             action: 'setCustomField',
@@ -88,6 +89,7 @@ async function processWebhook(event, payment, notification, ctpClient) {
     ]
     try {
         await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+        await updateOrderStatus(ctpClient, currentPayment.id, paymentStatus, orderStatus);
         result.status = 'Success'
     } catch (error) {
         result.status = 'Failure'
@@ -257,6 +259,7 @@ async function processFraudNotification(event, payment, notification, ctpClient)
 
             try {
                 await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+                await updateOrderStatus(ctpClient, currentPayment.id, commerceToolsPaymentStatus, 'Open');
                 result.status = 'Success'
 
                 await addPowerboardLog({
@@ -292,6 +295,7 @@ async function processFraudNotification(event, payment, notification, ctpClient)
                     }
                 ]
                 await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+                await updateOrderStatus(ctpClient, currentPayment.id, 'Failed', 'Cancelled');
             }
         } else {
             result.message = 'Fraud data not found in localstorage'
@@ -430,6 +434,7 @@ async function processRefundSuccessNotification(event, payment, notification, ct
 
             try {
                 await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+                await updateOrderStatus(ctpClient, currentPayment.id, 'Paid', 'Cancelled');
                 result.status = 'Success'
                 result.message = `Refunded ${refunded}`
             } catch (error) {
@@ -449,6 +454,32 @@ async function processRefundSuccessNotification(event, payment, notification, ct
 
 }
 
+async function updateOrderStatus(
+    ctpClient,
+    id,
+    paymentStatus,
+    orderStatus
+) {
+    try {
+        let order = await ctpClient.fetchOrderByNymber(ctpClient.builder.orders, id)
+        if(order){
+            order = order.body
+            const updateOrderActions = [
+                {
+                    action: 'changePaymentState',
+                    paymentState: paymentStatus,
+                },
+                {
+                    action: 'changeOrderState',
+                    orderState: orderStatus
+                }
+            ]
+            await ctpClient.update(ctpClient.builder.orders, order.id, order.version, updateOrderActions)
+        }
+    } catch (error) {
+        console.log(error)
+    }
+}
 
 async function getPaymentByMerchantReference(
     ctpClient,
@@ -483,41 +514,48 @@ async function getNewStatuses(notification) {
 
     let powerboardPaymentStatus
     let commerceToolsPaymentStatus
+    let orderPaymentStatus
 
 
     switch (status.toUpperCase()) {
         case 'COMPLETE':
             powerboardPaymentStatus = 'powerboard-paid'
             commerceToolsPaymentStatus = 'Paid'
+            orderPaymentStatus = 'Open'
             break
         case 'PENDING':
         case 'PRE_AUTHENTICATION_PENDING':
             powerboardPaymentStatus = notification.capture ? 'powerboard-pending' : 'powerboard-authorize'
             commerceToolsPaymentStatus = 'Pending'
+            orderPaymentStatus = 'Cancelled'
             break
         case 'CANCELLED':
             powerboardPaymentStatus = 'powerboard-cancelled'
             commerceToolsPaymentStatus = 'Failed'
+            orderPaymentStatus = 'Cancelled'
             break
         case 'REFUNDED':
             powerboardPaymentStatus = 'powerboard-refunded'
             commerceToolsPaymentStatus = 'Paid'
+            orderPaymentStatus = 'Cancelled'
             break
         case 'REQUESTED':
             powerboardPaymentStatus = 'powerboard-requested'
             commerceToolsPaymentStatus = 'Pending'
+            orderPaymentStatus = 'Open'
             break
         case 'FAILED':
         case 'DECLINED':
             powerboardPaymentStatus = 'powerboard-failed'
             commerceToolsPaymentStatus = 'Failed'
+            orderPaymentStatus = 'Cancelled'
             break
         default:
-            powerboardPaymentStatus = ''
-            commerceToolsPaymentStatus = ''
+            powerboardPaymentStatus = 'powerboard-pending'
+            commerceToolsPaymentStatus = 'Pending'
+            orderPaymentStatus = 'Open'
     }
-
-    return {powerboard: powerboardPaymentStatus, commerceTools: commerceToolsPaymentStatus}
+    return {status: powerboardPaymentStatus, paymentStatus: commerceToolsPaymentStatus, orderStatus: orderPaymentStatus}
 }
 
 

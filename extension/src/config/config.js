@@ -71,7 +71,7 @@ async function getPowerboardConfig(type = 'all', disableCache = false) {
                 powerboardConfig['sandbox'].api_url = 'https://api.preproduction.powerboard.commbank.com.au';
                 return powerboardConfig['sandbox'] ?? {};
             }
-            powerboardConfig['live'].api_url = 'https://api.production.powerboard.commbank.com.au';
+            powerboardConfig['live'].api_url = 'https://api.powerboard.commbank.com.au';
             return powerboardConfig['live'] ?? {};
 
         case 'widget:':

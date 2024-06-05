@@ -14,6 +14,10 @@ async function ensureApiExtensions(
   const apiExtensionTemplate = await utils.readAndParseJsonFile(
     'resources/api-extension.json',
   )
+
+  const apiExtensionOrderTemplate = await utils.readAndParseJsonFile(
+      'resources/api-order-extension.json',
+  )
   try {
     const logger = mainLogger.child({
       commercetools_project_key: ctpProjectKey,
@@ -24,10 +28,25 @@ async function ensureApiExtensions(
       }),
     )
 
+    const extensionOrderDraft = JSON.parse(
+        _.template(JSON.stringify(apiExtensionOrderTemplate))({
+          ctpPowerboardIntegrationBaseUrl,
+        }),
+    )
     const existingExtension = await fetchExtensionByKey(
       ctpClient,
       apiExtensionTemplate.key,
     )
+
+    const existingExtensionOrder = await fetchExtensionByKey(
+        ctpClient,
+        apiExtensionOrderTemplate.key,
+    )
+
+    if (existingExtensionOrder === null) {
+      await ctpClient.create(ctpClient.builder.extensions, extensionOrderDraft)
+    }
+
     if (existingExtension === null) {
       await ctpClient.create(ctpClient.builder.extensions, extensionDraft)
       logger.info(
