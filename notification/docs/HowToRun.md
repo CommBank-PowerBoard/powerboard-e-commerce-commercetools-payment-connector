@@ -28,7 +28,7 @@ git clone https://github.com/PayDock/e-commerce-powerboard-commercetools-payment
 
 2. Navigate to the project-directory.
 ```
-cd e-commerce-commercetools-payment-connector
+cd e-commerce-powerboard-commercetools-payment-connector
 ```
 
 3. Configure the environment variables for your  Notification Module.
@@ -83,7 +83,7 @@ git clone https://github.com/PayDock/e-commerce-powerboard-commercetools-payment
 2. Navigate to the project-directory.
 
 ```
-cd e-commerce-commercetools-payment-connector
+cd e-commerce-powerboard-commercetools-payment-connector
 ```
 
 3. Configure Environment Variables.
