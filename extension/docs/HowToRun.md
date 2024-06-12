@@ -13,7 +13,6 @@ Ensure you have the following prerequisites before proceeding with installation:
 
 You can install the modules using either `docker run...` or `docker-compose`. The following subsections detail both methods.
 
-
 ---
 ### Install with `docker run...`
 ---
@@ -28,12 +27,13 @@ git clone https://github.com/PayDock/e-commerce-powerboard-commercetools-payment
 
 2. Navigate to the project-directory.
 ```
-cd e-commerce-powerboard-commercetools-payment-connector
+cd e-commerce-commercetools-payment-connector
 ```
 
-3. Configure the environment variables for your  Notification Module.
+3. Configure the environment variables for your Extension Module
 
-Navigate to the notification directory and set up the environment variables:
+
+Navigate to the extension directory and set up the following environment variables:
 
 ```
 echo 'POWERBOARD_INTEGRATION_CONFIG={
@@ -44,7 +44,7 @@ echo 'POWERBOARD_INTEGRATION_CONFIG={
    "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com",
    "powerboardLiveUrl": "[API_POWERBOARD_URL]",
    "powerboardSandboxUrl":"[API_POWERBOARD_SANDBOX_URL]",
-   "notificationBaseUrl": "[EXTENSION_BASE_URL]"
+   "extensionBaseUrl": "[EXTENSION_BASE_URL]"
 }' > ./extension/.env
 ```
 
@@ -55,17 +55,17 @@ Replace the placeholder values with your Commercetools API credentials.
 
 Build the following docker images:
 
-- `docker build -t commercetools-payment-connector-notification -f cnf/notification/Dockerfile .`
+- `docker build -t commercetools-payment-connector-extention -f cnf/extension/Dockerfile .`
+
 
 5. Launch the Docker container with the following command:
 
-- `docker run -e POWERBOARD_INTEGRATION_CONFIG=xxxxxx -p 8443:8443 commercetools-payment-connector-notification`
+- `docker run -e POWERBOARD_INTEGRATION_CONFIG=xxxxxx -p 8082:8082 commercetools-payment-connector-extention`
+
 
 6. Replace the placeholder `xxxxxx` for POWERBOARD_INTEGRATION_CONFIG variable  with your Json-escapes string.
 ###
-
-The Notification Module is accessible at: http://your_domain:8443.
-
+The Extension Module is accessible at: http://your_domain:8082.
 
 
 ---
@@ -77,18 +77,18 @@ The following steps describe how to install the modules using `docker compose...
 1. Clone the Repository.
 
 ```
-git clone https://github.com/PayDock/e-commerce-powerboard-commercetools-payment-connector
+git clone https://github.com/PayDock/e-commerce-commercetools-payment-connector
 ```
 
 2. Navigate to the project-directory.
 
 ```
-cd e-commerce-powerboard-commercetools-payment-connector
+cd e-commerce-commercetools-payment-connector
 ```
 
 3. Configure Environment Variables.
 
-Navigate to the notification directory and set up the environment variables.
+Navigate to the extension directory and set up the environment variables.
 
 ```
 echo 'POWERBOARD_INTEGRATION_CONFIG={
@@ -99,7 +99,7 @@ echo 'POWERBOARD_INTEGRATION_CONFIG={
    "authUrl":"https://auth.[REGION_ID].gcp.commercetools.com",
    "powerboardLiveUrl": "[API_POWERBOARD_URL]",
    "powerboardSandboxUrl":"[API_POWERBOARD_SANDBOX_URL]",
-   "notificationBaseUrl": "[EXTENSION_BASE_URL]"
+   "extensionBaseUrl": "[EXTENSION_BASE_URL]"
 }' > ./extension/.env
 ```
 
@@ -110,13 +110,10 @@ Replace the placeholder values with your Commercetools API credentials.
 
 * Replace the placeholder `xxxxxx` for POWERBOARD_INTEGRATION_CONFIG variable in **./docker-compose.yml** with your Json-escapes string.
 
-
 * Launch docker-compose. The docker images will be built automatically:
 
 ```
     docker-compose up -d
 ```
 
-
-The Notification Module is accessible at: http://your_domain:8443.
-
+The Extension Module is accessible at: http://your_domain:8082.
