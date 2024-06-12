@@ -27,7 +27,7 @@ git clone https://github.com/PayDock/e-commerce-powerboard-commercetools-payment
 
 2. Navigate to the project-directory.
 ```
-cd e-commerce-commercetools-payment-connector
+cd e-commerce-powerboard-commercetools-payment-connector
 ```
 
 3. Configure the environment variables for your Extension Module
@@ -55,12 +55,12 @@ Replace the placeholder values with your Commercetools API credentials.
 
 Build the following docker images:
 
-- `docker build -t commercetools-payment-connector-extention -f cnf/extension/Dockerfile .`
+- `docker build -t commercetools-powerboard-payment-connector-extention -f cnf/extension/Dockerfile .`
 
 
 5. Launch the Docker container with the following command:
 
-- `docker run -e POWERBOARD_INTEGRATION_CONFIG=xxxxxx -p 8082:8082 commercetools-payment-connector-extention`
+- `docker run -e POWERBOARD_INTEGRATION_CONFIG=xxxxxx -p 8082:8082 commercetools-powerboard-payment-connector-extention`
 
 
 6. Replace the placeholder `xxxxxx` for POWERBOARD_INTEGRATION_CONFIG variable  with your Json-escapes string.
