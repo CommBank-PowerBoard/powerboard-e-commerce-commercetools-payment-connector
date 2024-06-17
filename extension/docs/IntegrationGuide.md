@@ -21,7 +21,7 @@ The Powerboard system supports a variety of webhook events, which are automated 
 ## Add Notifications
 Notifications can be added in two ways:
 1. **Via Commercetools Powerboard Custom Application:**
-   Setting notifications via the [Commercetools Powerboard Custom Application](https://github.com/PayDock/e-commerce-powerboard-commercetools-app) automates the configuration within Powerboard after you save the settings.
+   Setting notifications via the [Commercetools Powerboard Custom Application](https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-app) automates the configuration within Powerboard after you save the settings.
    ![Commercetools Powerboard Custom Application](custom-aplication-img.png)
 
 2. **Directly Through Powerboard Account:**
@@ -137,7 +137,7 @@ npm run test
 ```
 
 ## See also
-- [Powerboard Commercetools Custom Application](https://github.com/PayDock/e-commerce-powerboard-commercetools-app)
+- [Powerboard Commercetools Custom Application](https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-app)
 - [Powerboard website](https://www.commbank.com.au)
 
 ## License

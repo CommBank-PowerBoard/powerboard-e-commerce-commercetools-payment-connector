@@ -17,8 +17,8 @@ Manages asynchronous notifications from Powerboard about payment status changes 
 **Important**: Both modules are required to fully integrate your commercetools setup with Powerboard.
 
 ## Additional Resources
-- [Powerboard Commercetools Widget](https://github.com/PayDock/e-commerce-powerboard-commercetools-npm)
-- [Powerboard Commercetools Custom Application](https://github.com/PayDock/e-commerce-powerboard-commercetools-app)
+- [Powerboard Commercetools Widget](https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-npm)
+- [Powerboard Commercetools Custom Application](https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-app)
 - [Official Powerboard Website](https://www.commbank.com.au/)
 
 ## License

@@ -23,12 +23,12 @@ The following steps describe how to install using `docker run...`.
 1. Clone the Repository.
 
 ```
-git clone https://github.com/PayDock/e-commerce-powerboard-commercetools-payment-connector
+git clone https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-payment-connector
 ```
 
 2. Navigate to the project-directory.
 ```
-cd e-commerce-powerboard-commercetools-payment-connector
+cd powerboard-e-commerce-commercetools-payment-connector
 ```
 
 3. Configure the environment variables for your  Notification Module.
@@ -77,13 +77,13 @@ The following steps describe how to install the modules using `docker compose...
 1. Clone the Repository.
 
 ```
-git clone https://github.com/PayDock/e-commerce-powerboard-commercetools-payment-connector
+git clone https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-payment-connector
 ```
 
 2. Navigate to the project-directory.
 
 ```
-cd e-commerce-powerboard-commercetools-payment-connector
+cd powerboard-e-commerce-commercetools-payment-connector
 ```
 
 3. Configure Environment Variables.
