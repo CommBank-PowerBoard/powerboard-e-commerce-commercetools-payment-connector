@@ -55,11 +55,11 @@ Replace the placeholder values with your Commercetools API credentials.
 
 Build the following docker images:
 
-- `docker build -t commercetools-payment-connector-notification -f cnf/notification/Dockerfile .`
+- `docker build -t commercetools-powerboard-payment-connector-notification -f cnf/notification/Dockerfile .`
 
 5. Launch the Docker container with the following command:
 
-- `docker run -e POWERBOARD_INTEGRATION_CONFIG=xxxxxx -p 8443:8443 commercetools-payment-connector-notification`
+- `docker run -e POWERBOARD_INTEGRATION_CONFIG=xxxxxx -p 8443:8443 commercetools-powerboard-payment-connector-notification`
 
 6. Replace the placeholder `xxxxxx` for POWERBOARD_INTEGRATION_CONFIG variable  with your Json-escapes string.
 ###

@@ -137,8 +137,9 @@ npm run test
 ```
 
 ## See also
+- [Powerboard Commercetools Widget](https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-npm)
 - [Powerboard Commercetools Custom Application](https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-app)
-- [Powerboard website](https://www.commbank.com.au)
+- [Official Powerboard Website](https://www.commbank.com.au/)
 
 ## License
 
