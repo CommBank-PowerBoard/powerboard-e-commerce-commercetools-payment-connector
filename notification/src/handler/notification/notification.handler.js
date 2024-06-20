@@ -71,7 +71,6 @@ async function processWebhook(event, payment, notification, ctpClient) {
     let operation = notification.type
     operation = operation ? operation.toLowerCase() : 'undefined'
     operation = operation.charAt(0).toUpperCase() + operation.slice(1)
-
     const updateActions = [
         {
             action: 'setCustomField',

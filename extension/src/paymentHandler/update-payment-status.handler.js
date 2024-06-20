@@ -39,9 +39,9 @@ async function execute(paymentObject) {
     if (responseAPI?.status === "Success") {
         if (responseAPI.chargeId && responseAPI.chargeId !== chargeId) {
             chargeId = responseAPI.chargeId;
-            actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_Powerboard_TRANSACTION_ID, chargeId));
+            actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_POWERBOARD_TRANSACTION_ID, chargeId));
         }
-        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_Powerboard_PAYMENT_STATUS, newStatus));
+        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_POWERBOARD_PAYMENT_STATUS, newStatus));
         if (refundedAmount) {
             actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_REFUNDED_AMOUNT, refundedAmount));
         }

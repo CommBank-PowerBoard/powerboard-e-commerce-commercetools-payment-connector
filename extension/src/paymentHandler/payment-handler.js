@@ -59,12 +59,14 @@ async function handlePaymentByExtRequest(paymentObject, authToken) {
             errors: validatePaymentErrors,
         }
 
-    const paymentExtensionRequest = paymentObject?.custom?.fields?.PaymentExtensionRequest ?? null;
+    const paymentCustomFields =  paymentObject?.custom?.fields;
+    const paymentExtensionRequest = paymentCustomFields?.PaymentExtensionRequest ?? null;
+    const additionalInformation = paymentCustomFields?.AdditionalInformation ?? null;
 
     const objPaymentExtensionRequest = JSON.parse(paymentExtensionRequest);
     const actionExtension = objPaymentExtensionRequest.action ?? null;
     const handlers = [];
-    if (!actionExtension || actionExtension === 'FromNotification') return null
+    if (!actionExtension || (actionExtension === 'FromNotification' && additionalInformation)) return null
     switch (actionExtension) {
         case  c.CTP_CUSTOM_FIELD_GET_PAYMENT_METHODS_REQUEST:
             handlers.push(getPaymentMethodsHandler)

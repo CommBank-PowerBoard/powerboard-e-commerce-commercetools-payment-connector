@@ -26,6 +26,7 @@ async function execute(paymentObject) {
     ];
 
     const [response] = await Promise.all([makePayment(makePaymentRequestObj)])
+
     if (response.status === 'Failure') {
         const errorMessage = response.message ?? "Invalid transaction details"
         actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE,  JSON.stringify( {status : "Failure", message : errorMessage})));
@@ -44,13 +45,13 @@ async function execute(paymentObject) {
     const additionalInfo = requestBodyJson?.AdditionalInfo;
 
     if (paymentMethod) {
-        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_POAWRBOARD_PAYMENT_TYPE, paymentMethod));
+        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_POWERBOARD_PAYMENT_TYPE, paymentMethod));
     }
     if(powerboardStatus) {
-        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_POAWRBOARD_PAYMENT_STATUS, powerboardStatus));
+        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_POWERBOARD_PAYMENT_STATUS, powerboardStatus));
     }
     if (powerboardTransactionId) {
-        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_POAWRBOARD_TRANSACTION_ID, powerboardTransactionId));
+        actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_POWERBOARD_TRANSACTION_ID, powerboardTransactionId));
     }
 
     if (commerceToolsUserId) {
