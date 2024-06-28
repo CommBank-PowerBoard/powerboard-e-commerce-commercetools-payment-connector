@@ -63,29 +63,39 @@ async function processNotification(
 async function processWebhook(event, payment, notification, ctpClient) {
     const result = {}
     const {status, paymentStatus, orderStatus} = await getNewStatuses(notification)
-
+    let customStatus = status;
     const chargeId = notification._id
     const currentPayment = payment
     const currentVersion = payment.version
+    const updateActions = [{
+        action: 'setCustomField',
+        name: 'PaymentExtensionRequest',
+        value: JSON.stringify({
+            action: 'FromNotification',
+            request: {}
+        })
+    }];
+    if(status === 'powerboard-paid'){
+        const capturedAmount = parseFloat(notification.transaction.amount) || 0
+        const orderAmount = calculateOrderAmount(payment);
+        customStatus = capturedAmount < orderAmount ? 'powerboard-p-paid' : 'powerboard-paid'
+        updateActions.push({
+            action: 'setCustomField',
+            name: 'CapturedAmount',
+            value: capturedAmount
+        })
+    }
 
     let operation = notification.type
     operation = operation ? operation.toLowerCase() : 'undefined'
     operation = operation.charAt(0).toUpperCase() + operation.slice(1)
-    const updateActions = [
-        {
-            action: 'setCustomField',
-            name: 'PowerboardPaymentStatus',
-            value: status
-        },
-        {
-            action: 'setCustomField',
-            name: 'PaymentExtensionRequest',
-            value: JSON.stringify({
-                action: 'FromNotification',
-                request: {}
-            })
-        }
-    ]
+
+    updateActions.push( {
+        action: 'setCustomField',
+        name: 'PowerboardPaymentStatus',
+        value: customStatus
+    })
+
     try {
         await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
         await updateOrderStatus(ctpClient, currentPayment.id, paymentStatus, orderStatus);
@@ -395,9 +405,10 @@ async function processRefundSuccessNotification(event, payment, notification, ct
         return {status: 'Success', message: ''}
     }
     const refundAmount = parseFloat(notification.transaction.amount) || 0
-    const orderAmount = calculateOrderAmount(payment);
-    let oldRefundAmount = parseFloat(payment?.custom?.fields?.RefundedAmount) || 0;
+    const orderAmount = parseFloat(payment?.custom?.fields?.CapturedAmount) || 0;
+    const oldRefundAmount = parseFloat(payment?.custom?.fields?.RefundedAmount) || 0;
     const notificationStatus = formatNotificationStatus(notification.status);
+
 
     if (['REFUNDED', 'REFUND_REQUESTED'].includes(notificationStatus.toUpperCase())) {
         powerboardStatus = (oldRefundAmount + refundAmount) < orderAmount ? 'powerboard-p-refund' : 'powerboard-refunded'
@@ -537,12 +548,12 @@ async function getNewStatuses(notification) {
         case 'COMPLETE':
             powerboardPaymentStatus = 'powerboard-paid'
             commerceToolsPaymentStatus = 'Paid'
-            orderPaymentStatus = 'Open'
+            orderPaymentStatus = 'Complete'
             break
         case 'PENDING':
         case 'PRE_AUTHENTICATION_PENDING':
             powerboardPaymentStatus = notification.capture ? 'powerboard-pending' : 'powerboard-authorize'
-            commerceToolsPaymentStatus = 'Pending'
+            commerceToolsPaymentStatus = notification.capture ? 'Pending' : 'Paid'
             orderPaymentStatus = 'Cancelled'
             break
         case 'CANCELLED':
@@ -553,7 +564,7 @@ async function getNewStatuses(notification) {
         case 'REFUNDED':
             powerboardPaymentStatus = 'powerboard-refunded'
             commerceToolsPaymentStatus = 'Paid'
-            orderPaymentStatus = 'Cancelled'
+            orderPaymentStatus = 'Complete'
             break
         case 'REQUESTED':
             powerboardPaymentStatus = 'powerboard-requested'

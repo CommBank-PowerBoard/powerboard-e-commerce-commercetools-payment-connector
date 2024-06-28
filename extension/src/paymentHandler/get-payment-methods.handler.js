@@ -59,7 +59,7 @@ async function execute(paymentObject) {
                 title: powerboardCredentials.widget.payment_methods_cards_title,
                 description: powerboardCredentials.widget.payment_methods_cards_description,
                 config: {
-                    card_use_on_checkout: isUseOnCheckout('card', connection, powerboardCredentials, totalPrice),
+                    card_use_on_checkout: connection.card_use_on_checkout,
                     card_gateway_id: connection.card_gateway_id,
                     card_3ds: connection.card_3ds,
                     card_3ds_service_id: connection.card_3ds_service_id,
@@ -90,7 +90,7 @@ async function execute(paymentObject) {
                 title: powerboardCredentials.payment_methods_wallets_apple_pay_title,
                 description: powerboardCredentials.payment_methods_wallets_apple_pay_description,
                 config: {
-                    wallets_apple_pay_use_on_checkout: isUseOnCheckout('apple-pay', connection, powerboardCredentials, totalPrice),
+                    wallets_apple_pay_use_on_checkout: connection.wallets_apple_pay_use_on_checkout,
                     wallets_apple_pay_gateway_id: connection.wallets_apple_pay_gateway_id,
                     wallets_apple_pay_fraud: connection.wallets_apple_pay_fraud,
                     wallets_apple_pay_fraud_service_id: connection.wallets_apple_pay_fraud_service_id,
@@ -103,7 +103,7 @@ async function execute(paymentObject) {
                 title: powerboardCredentials.payment_methods_wallets_google_pay_title,
                 description: powerboardCredentials.payment_methods_wallets_google_pay_description,
                 config: {
-                    wallets_google_pay_use_on_checkout: isUseOnCheckout('google-pay', connection, powerboardCredentials, totalPrice),
+                    wallets_google_pay_use_on_checkout: connection.wallets_google_pay_use_on_checkout,
                     wallets_google_pay_gateway_id: connection.wallets_google_pay_gateway_id,
                     wallets_google_pay_fraud: connection.wallets_google_pay_fraud,
                     wallets_google_pay_fraud_service_id: connection.wallets_google_pay_fraud_service_id,
@@ -129,7 +129,7 @@ async function execute(paymentObject) {
                 title: powerboardCredentials.payment_methods_wallets_paypal_title,
                 description: powerboardCredentials.payment_methods_wallets_paypal_description,
                 config: {
-                    wallets_paypal_smart_button_use_on_checkout: isUseOnCheckout('paypal', connection, powerboardCredentials, totalPrice),
+                    wallets_paypal_smart_button_use_on_checkout: connection.wallets_paypal_smart_button_use_on_checkout,
                     wallets_paypal_smart_button_gateway_id: connection.wallets_paypal_smart_button_gateway_id,
                     wallets_paypal_smart_button_fraud: connection.wallets_paypal_smart_button_fraud,
                     wallets_paypal_smart_button_fraud_service_id: connection.wallets_paypal_smart_button_fraud_service_id,
@@ -216,19 +216,11 @@ async function execute(paymentObject) {
 
 function isUseOnCheckout(paymentMethod, connection, powerboardCredentials, totalPrice) {
     const paymentMethods = {
-        'card': 'card',
-        'apple-pay': 'wallets_apple_pay',
-        'google-pay': 'wallets_google_pay',
-        'paypal': 'wallets_paypal',
         'afterpay_v1': 'alternative_payment_method_afterpay_v1',
         'zippay': 'alternative_payment_method_zippay'
     };
 
     const keysUseOnCheckout = {
-        'card': 'card',
-        'apple-pay': 'wallets_apple_pay',
-        'google-pay': 'wallets_google_pay',
-        'paypal': 'wallets_paypal_smart_button',
         'afterpay_v1': 'alternative_payment_methods_afterpay_v1',
         'zippay': 'alternative_payment_methods_zippay'
     };

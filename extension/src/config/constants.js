@@ -27,6 +27,7 @@ export default {
     STATUS_TYPES: {
         AUTHORIZE: "powerboard-authorize",
         PAID: "powerboard-paid",
+        P_PAID: "powerboard-p-paid",
         CANCELLED: "powerboard-cancelled",
         REFUNDED: "powerboard-refunded",
         P_REFUND: "powerboard-p-refund",
