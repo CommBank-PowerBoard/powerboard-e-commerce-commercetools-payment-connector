@@ -85,7 +85,11 @@ async function processPaymentStatusChange(paymentObject, requestBodyJson) {
         case c.STATUS_TYPES.PAID:
         case c.STATUS_TYPES.P_PAID:
             if (oldStatus === c.STATUS_TYPES.AUTHORIZE) {
-                responseAPI = await updatePowerboardStatus(`/v1/charges/${chargeId}/capture`, 'post', {});
+                const capturedAmount = requestBodyJson.capturedAmount || 0;
+                responseAPI = await updatePowerboardStatus(`/v1/charges/${chargeId}/capture`, 'post',{
+                    amount: capturedAmount,
+                    from_webhook: true
+                });
             } else {
                 error = "Charge not found or not in the desired state";
             }
