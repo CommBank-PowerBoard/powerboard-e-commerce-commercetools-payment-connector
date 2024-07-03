@@ -67,15 +67,8 @@ async function processWebhook(event, payment, notification, ctpClient) {
     const chargeId = notification._id
     const currentPayment = payment
     const currentVersion = payment.version
-    const updateActions = [{
-        action: 'setCustomField',
-        name: 'PaymentExtensionRequest',
-        value: JSON.stringify({
-            action: 'FromNotification',
-            request: {}
-        })
-    }];
-    if(status === 'powerboard-paid'){
+    const updateActions = [];
+    if (status === 'powerboard-paid') {
         const capturedAmount = parseFloat(notification.transaction.amount) || 0
         const orderAmount = calculateOrderAmount(payment);
         customStatus = capturedAmount < orderAmount ? 'powerboard-p-paid' : 'powerboard-paid'
@@ -90,12 +83,20 @@ async function processWebhook(event, payment, notification, ctpClient) {
     operation = operation ? operation.toLowerCase() : 'undefined'
     operation = operation.charAt(0).toUpperCase() + operation.slice(1)
 
-    updateActions.push( {
+    updateActions.push({
         action: 'setCustomField',
         name: 'PowerboardPaymentStatus',
         value: customStatus
     })
 
+    updateActions.push({
+        action: 'setCustomField',
+        name: 'PaymentExtensionRequest',
+        value: JSON.stringify({
+            action: 'FromNotification',
+            request: {}
+        })
+    })
     try {
         await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
         await updateOrderStatus(ctpClient, currentPayment.id, paymentStatus, orderStatus);
