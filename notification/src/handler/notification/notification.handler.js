@@ -158,11 +158,11 @@ async function processFraudNotificationComplete(event, payment, notification, ct
 
     const fraudChargeId = notification._id ?? null;
     const cacheName = `powerboard_fraud_${notification.reference}`
+
     let cacheData = await customObjectsUtils.getItem(cacheName)
     if (!cacheData) {
         return {message: 'Fraud data not found in local storage'};
     }
-
     cacheData = JSON.parse(cacheData)
     const request = await generateChargeRequest(notification, cacheData, fraudChargeId)
     const isDirectCharge = cacheData.capture
@@ -446,7 +446,7 @@ async function processRefundSuccessNotification(event, payment, notification, ct
 
         try {
             await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
-            await updateOrderStatus(ctpClient, currentPayment.id, 'Paid', 'Cancelled');
+            await updateOrderStatus(ctpClient, currentPayment.id, 'Paid', 'Complete');
 
             result.status = 'Success'
             result.message = `Refunded ${refunded}`
@@ -554,11 +554,11 @@ async function getNewStatuses(notification) {
         case 'PRE_AUTHENTICATION_PENDING':
             powerboardPaymentStatus = notification.capture ? 'powerboard-pending' : 'powerboard-authorize'
             commerceToolsPaymentStatus = notification.capture ? 'Pending' : 'Paid'
-            orderPaymentStatus = 'Cancelled'
+            orderPaymentStatus = 'Open'
             break
         case 'CANCELLED':
             powerboardPaymentStatus = 'powerboard-cancelled'
-            commerceToolsPaymentStatus = 'Failed'
+            commerceToolsPaymentStatus = 'Paid'
             orderPaymentStatus = 'Cancelled'
             break
         case 'REFUNDED':

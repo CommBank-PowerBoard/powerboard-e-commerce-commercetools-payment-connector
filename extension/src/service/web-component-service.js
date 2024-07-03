@@ -420,7 +420,7 @@ async function cardFraud3DsStandaloneCharge({configurations, input, amount, curr
             phone: billingPhone,
         };
 
-        await customObjectsUtils.setItem(`powerboard${input.orderId}`, JSON.stringify(cacheData));
+        await customObjectsUtils.setItem(`powerboard_fraud_${input.orderId}`, JSON.stringify(cacheData));
         result.powerboardStatus = 'powerboard-pending';
     } else {
         result.powerboardStatus = 'powerboard-failed';
@@ -487,7 +487,7 @@ async function cardFraudStandalone3DsInBuildCharge({configurations, input, amoun
             phone: billingPhone
         };
 
-        await customObjectsUtils.setItem(`powerboard${input.orderId}`, JSON.stringify(cacheData));
+        await customObjectsUtils.setItem(`powerboard_fraud_${input.orderId}`, JSON.stringify(cacheData));
         result.powerboardStatus = 'powerboard-pending';
     } else {
         result.powerboardStatus = 'powerboard-failed';
@@ -799,7 +799,7 @@ async function cardFraudStandaloneCharge({configurations, input, amount, currenc
             phone: input.billing_phone ?? ''
         };
 
-        await customObjectsUtils.setItem(`powerboard${input.orderId}`, JSON.stringify(cacheData));
+        await customObjectsUtils.setItem(`powerboard_fraud_${input.orderId}`, JSON.stringify(cacheData));
         result.powerboardStatus = 'powerboard-pending';
     } else {
         result.powerboardStatus = 'powerboard-failed';
