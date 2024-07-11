@@ -27,7 +27,7 @@ git clone +https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commerce
 Navigate to the project directory:
 
 ```
-cd e-commerce-commercetools-payment-connector
+cd powerboard-e-commerce-commercetools-payment-connector
 ```
 
 ### 2 . Install dependencies
