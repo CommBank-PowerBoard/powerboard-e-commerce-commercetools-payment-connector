@@ -1,6 +1,6 @@
-# Paydock Commercetools Custom Application
+# Powerboard Commercetools Custom Application
 
-This guide provides instructions on how to install and set up the "Paydock" custom application for Commercetools.
+This guide provides instructions on how to install and set up the "Powerboard" custom application for Commercetools.
 
 
 
@@ -21,13 +21,13 @@ Follow these steps to install the custom application:
 Open your terminal and run the following command to clone the repository:
 
 ```
-git clone https://github.com/PayDock/e-commerce-commercetools-app
+git clone https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-app
 ```
 
 Navigate to the project directory:
 
 ```
-cd e-commerce-commercetools-app
+cd e-commerce-commercetools-payment-connector
 ```
 
 ### 2 . Install dependencies
@@ -45,6 +45,11 @@ APP_CLIENT_ID=""
 APP_CLIENT_SECRET="***"
 APP_PROJECT_KEY="***"
 APP_REGION="europe-west1.gcp"
+ENTRY_POINT_URI_PATH="***"
+CLOUD_IDENTIFIER=gcp-eu
+APPLICATION_URL="***"
+CUSTOM_APPLICATION_ID="***"
+
 ```
 Replace the placeholder values with your actual Commercetools API credentials.
 
@@ -54,12 +59,12 @@ Start the application by running the following command:
 npm start
 ```
 
-The application should now be running on http://your_domain:3000.
+The application should now be running on http://your_domain:3001.
 
 ## Usage
 To use the custom application:
 
-1. Open your browser and navigate to http://your_domain:3000.
+1. Open your browser and navigate to http://your_domain:3001.
 2. Log in with your Commercetools account credentials.
 3. Follow the on-screen instructions to use the application features.
 
@@ -68,4 +73,4 @@ To use the custom application:
 This project is licensed under the MIT License. See the [LICENSE](https://rem.mit-license.org/+MIT)  file for details.
 
 ## Contact
-If you have any questions or need further assistance, please contact [Professional Services](https://paydock.com/) .
+If you have any questions or need further assistance, please contact [Professional Services](https://www.commbank.com.au/) .
