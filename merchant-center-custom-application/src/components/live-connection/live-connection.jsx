@@ -224,7 +224,7 @@ const LiveConnectionForm = () => {
       setLoading(true);
 
       try {
-        let result = await new ValidationPowerboardData().validateConnections(values);
+        let result = await new ValidationPowerboardData(env).validateConnections(values);
         if(!result.isValid){
           setError({message: result.errors.join(',')});
           setLoading(false);

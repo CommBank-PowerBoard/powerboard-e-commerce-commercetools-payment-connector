@@ -16,7 +16,8 @@ const config = {
         clientId: '${env:APP_CLIENT_ID}',
         clientSecret: '${env:APP_CLIENT_SECRET}',
         projectKey: '${env:APP_PROJECT_KEY}',
-        region: '${env:APP_REGION}'
+        region: '${env:APP_REGION}',
+        sandboxApiURL: '${env:SANDBOX_API_URL}'
     },
     oAuthScopes: {
         view: [],
@@ -92,7 +93,8 @@ const config = {
                 'http://localhost:3003',
                 'http://localhost:3001',
                 'https://api.powerboard.commbank.com.au',
-                'https://api.preproduction.powerboard.commbank.com.au'
+                'https://api.preproduction.powerboard.commbank.com.au',
+                'https://api.staging.powerboard.commbank.com.au'
             ],
             'script-src': [
                 '\'self\'',
@@ -107,7 +109,8 @@ const config = {
                 'http://localhost:3001',
                 'http://localhost:3003',
                 'https://api.powerboard.commbank.com.au',
-                'https://api.preproduction.powerboard.commbank.com.au'
+                'https://api.preproduction.powerboard.commbank.com.au',
+                'https://api.staging.powerboard.commbank.com.au'
             ],
             'style-src': [
                 '\'self\'',
@@ -132,7 +135,8 @@ const config = {
                 'http://localhost:3003',
                 'http://localhost:3001',
                 'https://api.powerboard.commbank.com.au',
-                'https://api.preproduction.powerboard.commbank.com.au'
+                'https://api.preproduction.powerboard.commbank.com.au',
+                'https://api.staging.powerboard.commbank.com.au'
             ],
         },
     },
