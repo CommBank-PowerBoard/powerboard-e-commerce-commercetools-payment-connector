@@ -1,7 +1,7 @@
 import {serializeError} from 'serialize-error'
 import VError from 'verror'
 import config from '../../config/config.js'
-import {addPowerboardHttpLog, addPowerboardLog} from '../../utils/logger.js'
+import {addPowerboardLog} from '../../utils/logger.js'
 import ctp from '../../utils/ctp.js'
 import customObjectsUtils from '../../utils/custom-objects-utils.js'
 
@@ -26,7 +26,6 @@ async function processNotification(
             result.status = 'Failure'
             result.message = 'Payment not found'
         } else if (event !== undefined) {
-            addPowerboardHttpLog(notificationResponse)
             switch (event) {
                 case 'transaction_success':
                 case 'transaction_failure':
@@ -62,7 +61,7 @@ async function processNotification(
 
 async function processWebhook(event, payment, notification, ctpClient) {
     const result = {}
-    const {status, paymentStatus, orderStatus} = await getNewStatuses(notification)
+    const {status, paymentStatus, orderStatus} =  getNewStatuses(notification)
     let customStatus = status;
     const chargeId = notification._id
     const currentPayment = payment
@@ -165,7 +164,7 @@ async function processFraudNotificationComplete(event, payment, notification, ct
         return {message: 'Fraud data not found in local storage'};
     }
     cacheData = JSON.parse(cacheData)
-    const request = await generateChargeRequest(notification, cacheData, fraudChargeId)
+    const request = generateChargeRequest(notification, cacheData, fraudChargeId)
     const isDirectCharge = cacheData.capture
     await customObjectsUtils.removeItem(cacheName)
     const response = await createCharge(request, {directCharge: isDirectCharge}, true)
@@ -293,7 +292,7 @@ function determineFraudPaymentStatus(isAuthorization, status) {
     };
 }
 
-async function generateChargeRequest(notification, cacheData, fraudChargeId) {
+function generateChargeRequest(notification, cacheData, fraudChargeId) {
     const paymentSource = notification.customer.payment_source
 
     if (cacheData.gateway_id) {
@@ -429,6 +428,11 @@ async function processRefundSuccessNotification(event, payment, notification, ct
             },
             {
                 action: 'setCustomField',
+                name: 'PowerboardTransactionId',
+                value: chargeId
+            },
+            {
+                action: 'setCustomField',
                 name: 'PaymentExtensionRequest',
                 value: JSON.stringify({
                     action: 'FromNotification',
@@ -436,14 +440,6 @@ async function processRefundSuccessNotification(event, payment, notification, ct
                 })
             }
         ]
-
-        if (chargeId) {
-            updateActions.push({
-                action: 'setCustomField',
-                name: 'PowerboardTransactionId',
-                value: chargeId
-            })
-        }
 
         try {
             await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
@@ -456,7 +452,6 @@ async function processRefundSuccessNotification(event, payment, notification, ct
             result.message = error
         }
     }
-    chargeId = chargeId ?? currentPayment.custom.fields.PowerboardTransactionId
     await addPowerboardLog({
         powerboardChargeID: chargeId,
         operation: powerboardStatus,
@@ -531,11 +526,11 @@ async function cardFraudAttach({fraudChargeId, chargeId}) {
         fraud_charge_id: fraudChargeId
     }
 
-    return createCharge(request, {action: 'standalone-fraud-attach', chargeId}, true)
+    return await createCharge(request, {action: 'standalone-fraud-attach', chargeId}, true)
 }
 
 
-async function getNewStatuses(notification) {
+function getNewStatuses(notification) {
     let {status} = notification
     status = status ? status.toLowerCase() : 'undefined'
     status = status.charAt(0).toUpperCase() + status.slice(1)

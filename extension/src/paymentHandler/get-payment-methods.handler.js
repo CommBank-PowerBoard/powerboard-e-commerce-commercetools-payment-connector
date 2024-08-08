@@ -6,45 +6,52 @@ import config from "../config/config.js";
 import {getUserVaultTokens} from "../service/web-component-service.js";
 
 async function execute(paymentObject) {
-
-    const paymentExtensionRequest = JSON.parse(
-        paymentObject?.custom?.fields?.PaymentExtensionRequest
-    )
-    let CommerceToolsUserId = null;
-
-    const amountPlanned = paymentObject.amountPlanned ?? null;
-    let totalPrice = 0;
-    if (amountPlanned && amountPlanned.type === "centPrecision") {
-        const fraction = 10 ** amountPlanned.fractionDigits;
-        const centAmount = amountPlanned.centAmount;
-        totalPrice = centAmount / fraction;
-    }
-
-    if (paymentExtensionRequest.request) {
-        CommerceToolsUserId = paymentExtensionRequest.request.CommerceToolsUserId
-    }
+    const paymentExtensionRequest = getPaymentExtensionRequest(paymentObject);
+    const CommerceToolsUserId = getCommerceToolsUserId(paymentExtensionRequest);
+    const totalPrice = calculateTotalPrice(paymentObject.amountPlanned);
     const powerboardCredentials = await config.getPowerboardConfig('all', true);
-    let connection = {};
-    if (powerboardCredentials.sandbox.sandbox_mode === "Yes") {
-        connection = powerboardCredentials.sandbox;
-    } else {
-        connection = powerboardCredentials.live;
+    const connection = getConnectionConfig(powerboardCredentials);
+    const savedCredentials = await getSavedCredentials(CommerceToolsUserId);
+    const responseData = buildResponseData(powerboardCredentials, connection, totalPrice, savedCredentials);
+    return {actions: [createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE, responseData)]};
+}
+
+function getPaymentExtensionRequest(paymentObject) {
+    return JSON.parse(paymentObject?.custom?.fields?.PaymentExtensionRequest || '{}');
+}
+
+function getCommerceToolsUserId(paymentExtensionRequest) {
+    return paymentExtensionRequest.request?.CommerceToolsUserId || null;
+}
+
+function calculateTotalPrice(amountPlanned) {
+    if (amountPlanned?.type === "centPrecision") {
+        const fraction = 10 ** amountPlanned.fractionDigits;
+        return amountPlanned.centAmount / fraction;
     }
+    return 0;
+}
 
+function getConnectionConfig(powerboardCredentials) {
+    return powerboardCredentials.sandbox.sandbox_mode === "Yes"
+        ? powerboardCredentials.sandbox
+        : powerboardCredentials.live;
+}
 
+async function getSavedCredentials(CommerceToolsUserId) {
     const savedCredentials = {};
     if (CommerceToolsUserId) {
         const userVaultTokens = await getUserVaultTokens(CommerceToolsUserId);
-        if (userVaultTokens.length) {
-            for (const item of userVaultTokens) {
-                if (savedCredentials[item.type] === undefined) {
-                    savedCredentials[item.type] = {}
-                }
-                savedCredentials[item.type][item.vault_token] = item;
-            }
+        for (const item of userVaultTokens) {
+            savedCredentials[item.type] = savedCredentials[item.type] || {};
+            savedCredentials[item.type][item.vault_token] = item;
         }
     }
-    const responseData = {
+    return savedCredentials;
+}
+
+function buildResponseData(powerboardCredentials, connection, totalPrice, savedCredentials) {
+    return {
         sandbox_mode: powerboardCredentials.sandbox.sandbox_mode,
         api_credentials: {
             credentials_type: connection.credentials_type,
@@ -52,7 +59,7 @@ async function execute(paymentObject) {
             credentials_widget_access_key: connection.credentials_widget_access_key
         },
         payment_methods: {
-            "card": {
+            card: {
                 name: "powerboard-pay-card",
                 type: "card",
                 title: powerboardCredentials.widget.payment_methods_cards_title,
@@ -71,7 +78,7 @@ async function execute(paymentObject) {
                     card_card_method_save: connection.card_card_method_save
                 }
             },
-            "bank_accounts": {
+            bank_accounts: {
                 name: "powerboard-pay-bank-accounts",
                 type: "bank_accounts",
                 title: powerboardCredentials.widget.payment_methods_bank_accounts_title,
@@ -209,9 +216,6 @@ async function execute(paymentObject) {
         saved_credentials: savedCredentials
     }
 
-    const actions = []
-    actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE, responseData));
-    return {actions}
 }
 
 function isUseOnCheckout(paymentMethod, connection, powerboardCredentials, totalPrice) {

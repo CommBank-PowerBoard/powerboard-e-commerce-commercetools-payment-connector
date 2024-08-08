@@ -21,13 +21,13 @@ Follow these steps to install the custom application:
 Open your terminal and run the following command to clone the repository:
 
 ```
-git clone https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-payment-connector
+git clone https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-app
 ```
 
 Navigate to the project directory:
 
 ```
-cd powerboard-e-commerce-commercetools-payment-connector
+cd e-commerce-commercetools-payment-connector
 ```
 
 ### 2 . Install dependencies

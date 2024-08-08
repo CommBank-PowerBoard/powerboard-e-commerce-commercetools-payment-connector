@@ -1,9 +1,4 @@
-// Make sure to import the helper functions from the `ssr` entry point.
-import { entryPointUriPathToPermissionKeys } from '@commercetools-frontend/application-shell/ssr';
-
 export const entryPointUriPath = typeof window === 'undefined' ? process.env.ENTRY_POINT_URI_PATH : window.app.entryPointUriPath;
-
-export const PERMISSIONS = entryPointUriPathToPermissionKeys(entryPointUriPath);
 
 export const INITIAL_LIVE_CONNECTION_FORM = {
   credentials_type: 'credentials',
@@ -66,14 +61,10 @@ export const INITIAL_WIDGET_FORM = {
   version_custom_version: '',
   payment_methods_cards_title: '',
   payment_methods_cards_description: '',
-  payment_methods_bank_accounts_title: '',
-  payment_methods_bank_accounts_description: '',
   payment_methods_wallets_apple_pay_title: '',
   payment_methods_wallets_apple_pay_description: '',
   payment_methods_wallets_google_pay_title: '',
   payment_methods_wallets_google_pay_description: '',
-  payment_methods_wallets_afterpay_v2_title: '',
-  payment_methods_wallets_afterpay_v2_description: '',
   payment_methods_wallets_paypal_title: '',
   payment_methods_wallets_paypal_description: '',
   payment_methods_alternative_payment_method_afterpay_v1_title: '',
