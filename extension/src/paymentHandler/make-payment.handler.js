@@ -1,50 +1,58 @@
 import {
     createSetCustomFieldAction,
     createAddTransactionActionByResponse,
-    getPaymentKeyUpdateAction, deleteCustomFieldAction,
+    getPaymentKeyUpdateAction,
 } from './payment-utils.js'
 import c from '../config/constants.js'
 import {makePayment} from '../service/web-component-service.js'
 
 async function execute(paymentObject) {
-    const makePaymentRequestObj = JSON.parse(
-        paymentObject.custom.fields.makePaymentRequest,
-    )
+    const paymentExtensionRequest = JSON.parse(paymentObject.custom.fields.PaymentExtensionRequest)
+    const makePaymentRequestObj = paymentExtensionRequest?.request
+    const additionalInfo  = makePaymentRequestObj.AdditionalInfo;
     let capturedAmount = paymentObject.amountPlanned.centAmount;
     if (paymentObject.amountPlanned.type === 'centPrecision') {
         const fraction = 10 ** paymentObject.amountPlanned.fractionDigits;
         capturedAmount = paymentObject.amountPlanned.centAmount / fraction;
         makePaymentRequestObj.amount.value = capturedAmount;
     }
-    let paymentActions = [];
-    const actions = []
-    const customFieldsToDelete = [
-        'makePaymentRequest',
-        'makePaymentResponse',
-        'getVaultTokenRequest',
-        'getVaultTokenResponse',
-        'PaymentExtensionRequest'
-    ];
-
-    const [response] = await Promise.all([makePayment(makePaymentRequestObj)])
-
+    let actions = []
+    const [response] = await Promise.all([makePayment(makePaymentRequestObj,paymentObject)])
     if (response.status === 'Failure') {
         const errorMessage = response.message ?? "Invalid transaction details"
         actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE, JSON.stringify({
             status: "Failure",
             message: errorMessage
         })));
-        paymentActions = await deleteCustomFields(actions, paymentObject, customFieldsToDelete);
         return {
-            actions: paymentActions
+            actions
         };
     }
 
-    const requestBodyJson = JSON.parse(paymentObject?.custom?.fields?.makePaymentRequest);
+    const powerboardStatus = response?.powerboardStatus ?? makePaymentRequestObj?.PowerboardPaymentStatus;
+    makePaymentRequestObj.AdditionalInfo = additionalInfo;
+    actions = generateActionsFromResponse(actions, response, makePaymentRequestObj, capturedAmount, paymentObject, powerboardStatus);
 
+    if (powerboardStatus) {
+        const {orderState, orderPaymentState} = getCommercetoolsStatusesByPowerboardStatus(powerboardStatus)
+        actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE, JSON.stringify({
+            orderPaymentStatus: orderPaymentState,
+            orderStatus: orderState
+        })));
+        if (powerboardStatus === c.STATUS_TYPES.PAID) {
+            actions.push(createSetCustomFieldAction('CapturedAmount', capturedAmount));
+        }
+    }
+
+    return {
+        actions
+    }
+}
+
+
+function generateActionsFromResponse(actions, response, requestBodyJson, capturedAmount, paymentObject, powerboardStatus) {
     const paymentMethod = requestBodyJson?.PowerboardPaymentType;
     const powerboardTransactionId = response?.chargeId ?? requestBodyJson?.PowerboardTransactionId;
-    const powerboardStatus = response?.powerboardStatus ?? requestBodyJson?.PowerboardPaymentStatus;
     const commerceToolsUserId = requestBodyJson?.CommerceToolsUserId;
     const additionalInfo = requestBodyJson?.AdditionalInfo;
 
@@ -65,40 +73,13 @@ async function execute(paymentObject) {
     if (additionalInfo) {
         actions.push(createSetCustomFieldAction(c.CTP_CUSTOM_FIELD_ADDITIONAL_INFORMATION, JSON.stringify(additionalInfo)));
     }
-    const updatePaymentAction = getPaymentKeyUpdateAction(
-        paymentObject.key,
-        {body: paymentObject.custom.fields.makePaymentRequest},
-        response,
-    )
-    if (updatePaymentAction) actions.push(updatePaymentAction)
+    const updatePaymentAction = getPaymentKeyUpdateAction(paymentObject.key, requestBodyJson, response);
+    if (updatePaymentAction) actions.push(updatePaymentAction);
 
-    const addTransactionAction = createAddTransactionActionByResponse(
-        paymentObject.amountPlanned.centAmount,
-        paymentObject.amountPlanned.currencyCode,
-        response,
-    )
+    const addTransactionAction = createAddTransactionActionByResponse(paymentObject.amountPlanned.centAmount, paymentObject.amountPlanned.currencyCode, response);
+    if (addTransactionAction) actions.push(addTransactionAction);
 
-    if (addTransactionAction) {
-        actions.push(addTransactionAction)
-    }
-
-    if (powerboardStatus) {
-        const {orderState, orderPaymentState} = getCommercetoolsStatusesByPowerboardStatus(powerboardStatus)
-        actions.push(createSetCustomFieldAction(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE, JSON.stringify({
-            orderPaymentStatus: orderPaymentState,
-            orderStatus: orderState
-        })));
-        if (powerboardStatus === c.STATUS_TYPES.PAID) {
-            actions.push(createSetCustomFieldAction('CapturedAmount', capturedAmount));
-        }
-    } else {
-        customFieldsToDelete.push(c.CTP_INTERACTION_PAYMENT_EXTENSION_RESPONSE)
-    }
-
-    paymentActions = await deleteCustomFields(actions, paymentObject, customFieldsToDelete)
-    return {
-        actions: paymentActions
-    }
+    return actions;
 }
 
 function getCommercetoolsStatusesByPowerboardStatus(powerboardStatus) {
@@ -132,20 +113,5 @@ function getCommercetoolsStatusesByPowerboardStatus(powerboardStatus) {
 
     return {orderState, orderPaymentState}
 }
-
-
-async function deleteCustomFields(actions, paymentObject, customFieldsToDelete) {
-    const customFields = paymentObject?.custom?.fields;
-    if (customFields) {
-        customFieldsToDelete.forEach(field => {
-            if (typeof customFields[field] !== 'undefined' && customFields[field]) {
-                actions.push(deleteCustomFieldAction(field));
-            }
-        });
-    }
-
-    return actions
-}
-
 
 export default {execute}

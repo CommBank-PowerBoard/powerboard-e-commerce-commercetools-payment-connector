@@ -1,9 +1,10 @@
 import {serializeError} from 'serialize-error'
 import VError from 'verror'
 import config from '../../config/config.js'
-import {addPowerboardLog} from '../../utils/logger.js'
+import {addPowerboardLog, getLogActions} from '../../utils/logger.js'
 import ctp from '../../utils/ctp.js'
 import customObjectsUtils from '../../utils/custom-objects-utils.js'
+import {callPowerboard} from './powerboard-api-service.js';
 
 async function processNotification(
     notificationResponse
@@ -20,7 +21,7 @@ async function processNotification(
         result.message = 'Reference not found'
     } else {
         const paymentKey = notification.reference
-        const paymentObject = await getPaymentByMerchantReference(ctpClient, paymentKey)
+        let paymentObject = await getPaymentByMerchantReference(ctpClient, paymentKey)
 
         if (!paymentObject) {
             result.status = 'Failure'
@@ -52,6 +53,18 @@ async function processNotification(
                 default:
                     result.status = 'Failure'
                     result.message = 'Notification Event not found'
+            }
+
+            const logs = getLogActions();
+
+            if (logs.length) {
+                paymentObject = await ctpClient.fetchById(ctpClient.builder.payments, paymentObject.id);
+                await ctpClient.update(
+                    ctpClient.builder.payments,
+                    paymentObject.body.id,
+                    paymentObject.body.version,
+                    logs
+                );
             }
         }
     }
@@ -97,7 +110,12 @@ async function processWebhook(event, payment, notification, ctpClient) {
         })
     })
     try {
-        await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+        await ctpClient.update(
+            ctpClient.builder.payments,
+            currentPayment.id,
+            currentVersion,
+            updateActions.concat(getLogActions())
+        )
         await updateOrderStatus(ctpClient, currentPayment.id, paymentStatus, orderStatus);
         result.status = 'Success'
     } catch (error) {
@@ -105,12 +123,13 @@ async function processWebhook(event, payment, notification, ctpClient) {
         result.message = error
     }
 
-    await addPowerboardLog({
+    addPowerboardLog({
         powerboardChargeID: chargeId,
         operation,
         status: result.status,
         message: result.message ?? ''
     })
+
     return result
 }
 
@@ -142,7 +161,12 @@ async function processFraudNotification(event, payment, notification, ctpClient)
                 })
             }]
         try {
-            await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+            await ctpClient.update(
+                ctpClient.builder.payments,
+                currentPayment.id,
+                currentVersion,
+                updateActions.concat(getLogActions())
+            )
         } catch (error) {
             result.status = 'Failure'
             result.message = error
@@ -158,6 +182,7 @@ async function processFraudNotificationComplete(event, payment, notification, ct
 
     const fraudChargeId = notification._id ?? null;
     const cacheName = `powerboard_fraud_${notification.reference}`
+    const result= {};
 
     let cacheData = await customObjectsUtils.getItem(cacheName)
     if (!cacheData) {
@@ -174,7 +199,7 @@ async function processFraudNotificationComplete(event, payment, notification, ct
         result.status = 'UnfulfilledCondition'
         result.message = `Can't charge.${errorMessageToString(response)}`
 
-        await addPowerboardLog({
+        addPowerboardLog({
             powerboardChargeID: updatedChargeId,
             operation: 'Charge',
             status: result.status,
@@ -191,7 +216,7 @@ async function processFraudNotificationComplete(event, payment, notification, ct
             result.status = 'UnfulfilledCondition'
             result.message = `Can't fraud attach.${errorMessageToString(attachResponse)}`
 
-            await addPowerboardLog({
+            addPowerboardLog( {
                 powerboardChargeID: updatedChargeId,
                 operation: 'Fraud Attach',
                 status: result.status,
@@ -201,7 +226,8 @@ async function processFraudNotificationComplete(event, payment, notification, ct
         }
     }
 
-    return await handleFraudNotification(response, updatedChargeId, ctpClient, payment);
+    const returnHandleFraudNotification = await handleFraudNotification(response, updatedChargeId, ctpClient, payment)
+    return returnHandleFraudNotification;
 }
 
 function extractChargeIdFromNotification(response) {
@@ -210,7 +236,7 @@ function extractChargeIdFromNotification(response) {
 
 async function handleFraudNotification(response, updatedChargeId, ctpClient, payment) {
     let updateActions = [];
-
+    const result= {};
     const currentPayment = payment
     const currentVersion = payment.version
     let status = response?.resource?.data?.status
@@ -235,7 +261,7 @@ async function handleFraudNotification(response, updatedChargeId, ctpClient, pay
         {
             action: 'setCustomField',
             name: 'PowerboardTransactionId',
-            value: chargeId
+            value: updatedChargeId
         }
     ]
 
@@ -245,8 +271,8 @@ async function handleFraudNotification(response, updatedChargeId, ctpClient, pay
 
         result.status = 'Success'
 
-        await addPowerboardLog({
-            powerboardChargeID: chargeId,
+        addPowerboardLog({
+            powerboardChargeID: updatedChargeId,
             operation,
             status: result.status,
             message: ''
@@ -266,7 +292,7 @@ async function handleFraudNotification(response, updatedChargeId, ctpClient, pay
             {
                 action: 'setCustomField',
                 name: 'PowerboardTransactionId',
-                value: chargeId
+                value: updatedChargeId
             },
             {
                 action: 'setCustomField',
@@ -384,7 +410,7 @@ async function processRefundSuccessNotification(event, payment, notification, ct
     }
     const result = {}
     let powerboardStatus
-    let chargeId = notification._id
+    const chargeId = notification._id
     const currentPayment = payment
     const currentVersion = payment.version
 
@@ -444,7 +470,12 @@ async function processRefundSuccessNotification(event, payment, notification, ct
         ]
 
         try {
-            await ctpClient.update(ctpClient.builder.payments, currentPayment.id, currentVersion, updateActions)
+            await ctpClient.update(
+                ctpClient.builder.payments,
+                currentPayment.id,
+                currentVersion,
+                updateActions.concat(getLogActions())
+            )
             await updateOrderStatus(ctpClient, currentPayment.id, 'Paid', 'Complete');
 
             result.status = 'Success'
@@ -454,7 +485,7 @@ async function processRefundSuccessNotification(event, payment, notification, ct
             result.message = error
         }
     }
-    await addPowerboardLog({
+    addPowerboardLog({
         powerboardChargeID: chargeId,
         operation: powerboardStatus,
         status: result.status,
@@ -470,7 +501,10 @@ function calculateRefundedAmount(powerboardStatus, oldRefundAmount, refundAmount
 }
 
 function calculateOrderAmount(payment) {
-    const fraction = payment.amountPlanned.type === 'centPrecision' ? Math.pow(10, payment.amountPlanned.fractionDigits) : 1;
+    let fraction = 1;
+    if (payment?.amountPlanned?.type === 'centPrecision') {
+        fraction = 10 ** payment.amountPlanned.fractionDigits;
+    }
     return payment.amountPlanned.centAmount / fraction;
 }
 
@@ -575,73 +609,7 @@ function getNewStatuses(notification) {
 }
 
 
-async function callPowerboard(url, data, method) {
-    let returnedRequest
-    let returnedResponse
-    url = await generatePowerboardUrlAction(url)
-    try {
-        const {response, request} = await fetchAsyncPowerboard(url, data, method)
-        returnedRequest = request
-        returnedResponse = response
-    } catch (err) {
-        returnedRequest = {body: JSON.stringify(data)}
-        returnedResponse = serializeError(err)
-    }
 
-    return {request: returnedRequest, response: returnedResponse}
-}
-
-async function generatePowerboardUrlAction(url) {
-    const apiUrl = await config.getPowerboardApiUrl()
-    return apiUrl + url
-}
-
-async function fetchAsyncPowerboard(
-    url,
-    requestObj,
-    method
-) {
-    let response
-    let responseBody
-    let responseBodyInText
-    const request = await buildRequestPowerboard(requestObj, method)
-
-    try {
-        response = await fetch(url, request)
-        responseBodyInText = await response.text()
-        responseBody = responseBodyInText ? JSON.parse(responseBodyInText) : ''
-    } catch (err) {
-        if (response)
-            // Handle non-JSON format response
-            throw new Error(
-                `Unable to receive non-JSON format resposne from Powerboard API : ${responseBodyInText}`
-            )
-        // Error in fetching URL
-        else throw err
-    } finally {
-        if (responseBody.additionalData) {
-            delete responseBody.additionalData
-        }
-    }
-    return {response: responseBody, request}
-}
-
-async function buildRequestPowerboard(requestObj, methodOverride) {
-    const powerboardCredentials = await config.getPowerboardConfig('connection')
-    const requestHeaders = {
-        'Content-Type': 'application/json',
-        'x-user-secret-key': powerboardCredentials.credentials_secret_key
-    }
-
-    const request = {
-        method: methodOverride || 'POST',
-        headers: requestHeaders
-    }
-    if (methodOverride !== 'GET') {
-        request.body = JSON.stringify(requestObj)
-    }
-    return request
-}
 
 function errorMessageToString(response) {
     let result = ` ${response.error?.message ?? ''}`;

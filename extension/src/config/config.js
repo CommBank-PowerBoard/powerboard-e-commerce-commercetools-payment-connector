@@ -5,13 +5,26 @@ let config
 let powerboardConfig;
 let ctpClient;
 
+function getExtensionUrl() {
+    return  process.env.CONNECT_SERVICE_URL;
+}
+
+function decrypt(data, clientSecret) {
+    const keyArrayLen = clientSecret.length;
+
+    return data.split("").map((dataElement, index) => {
+        const remainder = index % keyArrayLen;
+
+        return String.fromCharCode(dataElement.charCodeAt(0) / clientSecret.charCodeAt(remainder))
+    }).join("");
+}
+
 function getModuleConfig() {
-    const extensionBaseUrl = process.env.CONNECT_SERVICE_URL ?? config.extensionBaseUrl;
     return {
         removeSensitiveData: true,
         port: config.port,
         logLevel: config.logLevel,
-        apiExtensionBaseUrl: extensionBaseUrl,
+        apiExtensionBaseUrl:  getExtensionUrl(),
         basicAuth: true,
         projectKey: config.projectKey,
         keepAliveTimeout: 30,
@@ -73,11 +86,24 @@ async function getPowerboardConfig(type = 'all', disableCache = false) {
                 powerboardConfig[element.key] = element.value;
             });
         }
+        ["live", "sandbox"].forEach((group) => [
+            "credentials_access_key",
+            "credentials_public_key",
+            "credentials_secret_key"
+        ].forEach((field) => {
+            if (powerboardConfig[group]?.[field]) {
+                powerboardConfig[group][field] = decrypt(powerboardConfig[group][field], config.clientSecret)
+            }
+        }))
     }
     switch (type) {
         case 'connection':
             if (powerboardConfig['sandbox']?.sandbox_mode === 'Yes') {
-                powerboardConfig['sandbox'].api_url = config.powerboardSandboxUrl;
+                if(config.powerboardWidgetTypeSdk === 'preproduction_cba'){
+                    powerboardConfig['sandbox'].api_url = config.powerboardSandboxUrl;
+                }else{
+                    powerboardConfig['sandbox'].api_url = config.powerboardStagingUrl;
+                }
                 return powerboardConfig['sandbox'] ?? {};
             }
             powerboardConfig['live'].api_url = config.powerboardLiveUrl;
@@ -110,6 +136,5 @@ export default {
     getCtpClient,
     getWidgetConfig,
     getExtensionConfig,
-    getPowerboardApiUrl,
-    getAuthorizationHeaderValue
+    getPowerboardApiUrl
 }

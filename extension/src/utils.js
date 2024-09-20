@@ -1,25 +1,42 @@
-import bunyan from 'bunyan'
 import {serializeError} from 'serialize-error'
+import loggers from '@commercetools-backend/loggers';
 import {fileURLToPath} from 'url'
 import path from 'path'
 import fs from 'node:fs/promises'
 import config from './config/config.js'
 
-let logger
 
-async function addPowerboardLog(data) {
-    const logKey = `powerboard-log_${Date.now()}`;
-    const logObject = {
-        container: "powerboard-logs",
-        key: logKey,
-        value: data
-    };
+const {createApplicationLogger} = loggers;
 
-    const ctpClient = await config.getCtpClient()
-    await ctpClient.create(
-        ctpClient.builder.customObjects,
-        JSON.stringify(logObject)
-    )
+let loggerInstance;
+const logActions = [];
+
+function getLogger() {
+    if (!loggerInstance) {
+        loggerInstance = createApplicationLogger({
+            name: 'ctp-powerboard-integration-extension',
+            level: config.getModuleConfig()?.logLevel || 'info',
+        });
+    }
+    return loggerInstance;
+}
+
+function addPowerboardLog( data) {
+    const date = new Date();
+
+    logActions.push({
+        "action": "addInterfaceInteraction",
+        "type": {
+            "key": "powerboard-payment-log-interaction"
+        },
+        "fields": {
+            "createdAt": date.toISOString(),
+            "chargeId": data.powerboardChargeID,
+            "operation": data.operation,
+            "status": data.status,
+            "message": data.message
+        }
+    })
 }
 
 function collectRequestData(request) {
@@ -40,16 +57,6 @@ function collectRequestData(request) {
 function sendResponse({response, statusCode = 200, headers, data}) {
     response.writeHead(statusCode, headers)
     response.end(JSON.stringify(data))
-}
-
-function getLogger() {
-    if (!logger)
-        logger = bunyan.createLogger({
-            name: 'ctp-powerboard-integration-extension',
-            stream: process.stderr,
-            level: config.getModuleConfig()?.logLevel || bunyan.INFO,
-        })
-    return logger
 }
 
 function handleUnexpectedPaymentError(paymentObj, err) {
@@ -81,11 +88,11 @@ async function readAndParseJsonFile(pathToJsonFileFromProjectRoot) {
 
 async function deleteElementByKeyIfExists(ctpClient, key) {
     try {
-        const { body } = await ctpClient.fetchByKey(
+        const {body} = await ctpClient.fetchByKey(
             ctpClient.builder.extensions,
             key,
         )
-        if(body){
+        if (body) {
             await ctpClient.delete(ctpClient.builder.extensions, body.id, body.version)
         }
         return body
@@ -95,10 +102,16 @@ async function deleteElementByKeyIfExists(ctpClient, key) {
     }
 }
 
+
+function getLogsAction() {
+    return logActions;
+}
+
 export default {
     collectRequestData,
     sendResponse,
     getLogger,
+    getLogsAction,
     handleUnexpectedPaymentError,
     readAndParseJsonFile,
     addPowerboardLog,
