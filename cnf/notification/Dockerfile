@@ -8,5 +8,6 @@ WORKDIR /app/notification/
 
 RUN npm install
 RUN npm ci --only=prod
+RUN npm run notification:post-deploy || true
 EXPOSE 8443
 CMD [ "node", "src/init.js" ]

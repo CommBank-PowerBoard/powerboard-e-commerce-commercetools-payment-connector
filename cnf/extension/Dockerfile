@@ -8,6 +8,6 @@ WORKDIR /app/extension/
 
 RUN npm install
 RUN npm ci --only=prod
-RUN npm run setup-resources || true
+RUN npm run extension:post-deploy || true
 EXPOSE 8080
 CMD [ "node", "src/init.js" ]
