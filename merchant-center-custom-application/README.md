@@ -21,13 +21,13 @@ Follow these steps to install the custom application:
 Open your terminal and run the following command to clone the repository:
 
 ```
-git clone https://github.com/PayDock/e-commerce-commercetools-app
+git clone https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-payment-connector
 ```
 
 Navigate to the project directory:
 
 ```
-cd e-commerce-commercetools-app
+cd powerboard-e-commerce-commercetools-payment-connector
 ```
 
 ### 2 . Install dependencies
@@ -41,10 +41,15 @@ npm install
 
 Create a .env file in the root directory of the project and add the following environment variables with your Commercetools API credentials:
 ```
-APP_CLIENT_ID=""
+APP_CLIENT_ID="***"
 APP_CLIENT_SECRET="***"
 APP_PROJECT_KEY="***"
-APP_REGION="europe-west1.gcp"
+APP_REGION=europe-west1.gcp
+ENTRY_POINT_URI_PATH="***"
+CLOUD_IDENTIFIER=gcp-eu
+APPLICATION_URL="***"
+CUSTOM_APPLICATION_ID="***"
+SANDBOX_API_URL="***"
 ```
 Replace the placeholder values with your actual Commercetools API credentials.
 
@@ -67,5 +72,6 @@ To use the custom application:
 ## License
 This project is licensed under the MIT License. See the [LICENSE](https://rem.mit-license.org/+MIT)  file for details.
 
-## Contact
-If you have any questions or need further assistance, please contact [Professional Services](https://paydock.com/) .
+## Additional Resources
+- [Powerboard Commercetools Widget](https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-npm)
+- [Official Powerboard Website](https://www.commbank.com.au/)
