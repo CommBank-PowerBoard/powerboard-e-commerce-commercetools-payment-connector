@@ -44,9 +44,7 @@ async function getPowerboardApiUrl() {
     return powerboardC.api_url;
 }
 
-function getAuthorizationHeaderValue() {
-   return  process.env.AUTH_HEADER_VALUE ?? null;
-}
+
 
 function getExtensionConfig() {
     return {
