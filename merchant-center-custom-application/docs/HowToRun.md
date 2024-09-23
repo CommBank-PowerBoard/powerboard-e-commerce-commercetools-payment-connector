@@ -21,13 +21,13 @@ Follow these steps to install the custom application:
 Open your terminal and run the following command to clone the repository:
 
 ```
-git clone https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-app
+git clone https://github.com/CommBank-PowerBoard/powerboard-e-commerce-commercetools-payment-connector
 ```
 
 Navigate to the project directory:
 
 ```
-cd e-commerce-commercetools-payment-connector
+cd powerboard-e-commerce-commercetools-payment-connector
 ```
 
 ### 2 . Install dependencies
@@ -49,7 +49,7 @@ ENTRY_POINT_URI_PATH="***"
 CLOUD_IDENTIFIER=gcp-eu
 APPLICATION_URL="***"
 CUSTOM_APPLICATION_ID="***"
-SANDBOX_API_URL="***"
+
 ```
 Replace the placeholder values with your actual Commercetools API credentials.
 
