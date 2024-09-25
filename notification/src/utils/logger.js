@@ -16,6 +16,9 @@ function getLogger() {
     return loggerInstance;
 }
 
+function clearLog(){
+    logActions = [];
+}
 function addPowerboardLog(data) {
     const date = new Date();
     let message = '';
@@ -46,4 +49,4 @@ function getLogActions(){
     return result;
 }
 
-export {getLogger, addPowerboardLog, getLogActions}
+export {getLogger, addPowerboardLog, getLogActions, clearLog}

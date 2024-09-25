@@ -12,7 +12,6 @@ variables:
 
 #### API #########################
 .build: &build
-  allow_failure: false
   services:
     - name: docker:18.09.8-dind
   stage: build
@@ -26,7 +25,6 @@ variables:
 
 # deploy template:
 .deploy_to: &deploy_to
-  allow_failure: false
   stage: deploy
   tags:
     - powerboard_paydock
@@ -44,7 +42,29 @@ variables:
 #### BUILD ####################
 ###############################
 
+build_app:
+  when: manual
+  allow_failure: true
+  <<: *build
+  script:
+    - docker pull $IMAGE/app:latest || true
+    - >
+      docker build
+      --build-arg HOST
+      --pull
+      --cache-from $IMAGE/app:latest
+      --tag $IMAGE/app:${CI_COMMIT_SHA}
+      -f cnf/app/Dockerfile
+      .
+    - docker tag $IMAGE/app:${CI_COMMIT_SHA} $IMAGE/app:latest
+    - docker push $IMAGE/app:${CI_COMMIT_SHA}
+    - docker push $IMAGE/app:latest
+  only:
+    - main
+
 build_extension:
+  when: manual
+  allow_failure: true
   <<: *build
   script:
     - docker pull $IMAGE/extension:latest || true
@@ -63,6 +83,8 @@ build_extension:
     - main
 
 build_notification:
+  when: manual
+  allow_failure: true
   <<: *build
   script:
     - docker pull $IMAGE/notification:latest || true
@@ -87,8 +109,18 @@ build_notification:
 #### DEPLOY ####################
 ################################
 
+deploy_app:
+  when: manual
+  <<: *deploy_to
+  script:
+    - docker pull $IMAGE/app:${CI_COMMIT_SHA}
+    - docker stack deploy -c $(pwd)/cnf/app/docker-compose.yml jsp --with-registry-auth
+  only:
+    - main
+
+
 deploy_extension:
-#  when: manual
+  when: manual
   <<: *deploy_to
   script:
     - docker pull $IMAGE/extension:${CI_COMMIT_SHA}
@@ -97,7 +129,7 @@ deploy_extension:
     - main
 
 deploy_notification:
-#  when: manual
+  when: manual
   <<: *deploy_to
   script:
     - docker pull $IMAGE/notification:${CI_COMMIT_SHA}

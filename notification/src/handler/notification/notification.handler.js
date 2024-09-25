@@ -22,7 +22,6 @@ async function processNotification(
     } else {
         const paymentKey = notification.reference
         let paymentObject = await getPaymentByMerchantReference(ctpClient, paymentKey)
-
         if (!paymentObject) {
             result.status = 'Failure'
             result.message = 'Payment not found'
@@ -74,7 +73,11 @@ async function processNotification(
 
 async function processWebhook(event, payment, notification, ctpClient) {
     const result = {}
-    const {status, paymentStatus, orderStatus} =  getNewStatuses(notification)
+    const oldStatus = payment.custom.fields?.PowerboardPaymentStatus ?? null;
+    if (oldStatus && oldStatus === "powerboard-cancelled") {
+        return result
+    }
+    const {status, paymentStatus, orderStatus} = getNewStatuses(notification)
     let customStatus = status;
     const chargeId = notification._id
     const currentPayment = payment
@@ -118,17 +121,16 @@ async function processWebhook(event, payment, notification, ctpClient) {
         )
         await updateOrderStatus(ctpClient, currentPayment.id, paymentStatus, orderStatus);
         result.status = 'Success'
+        addPowerboardLog({
+            powerboardChargeID: chargeId,
+            operation,
+            status: result.status,
+            message: result.message ?? ''
+        })
     } catch (error) {
         result.status = 'Failure'
         result.message = error
     }
-
-    addPowerboardLog({
-        powerboardChargeID: chargeId,
-        operation,
-        status: result.status,
-        message: result.message ?? ''
-    })
 
     return result
 }
@@ -182,7 +184,7 @@ async function processFraudNotificationComplete(event, payment, notification, ct
 
     const fraudChargeId = notification._id ?? null;
     const cacheName = `powerboard_fraud_${notification.reference}`
-    const result= {};
+    const result = {};
 
     let cacheData = await customObjectsUtils.getItem(cacheName)
     if (!cacheData) {
@@ -209,14 +211,14 @@ async function processFraudNotificationComplete(event, payment, notification, ct
     }
 
     if (cacheData._3ds) {
-         const attachResponse =  await createCharge({
+        const attachResponse = await createCharge({
             fraud_charge_id: fraudChargeId
         }, {action: 'standalone-fraud-attach', updatedChargeId}, true)
         if (attachResponse?.error) {
             result.status = 'UnfulfilledCondition'
             result.message = `Can't fraud attach.${errorMessageToString(attachResponse)}`
 
-            addPowerboardLog( {
+            addPowerboardLog({
                 powerboardChargeID: updatedChargeId,
                 operation: 'Fraud Attach',
                 status: result.status,
@@ -236,7 +238,7 @@ function extractChargeIdFromNotification(response) {
 
 async function handleFraudNotification(response, updatedChargeId, ctpClient, payment) {
     let updateActions = [];
-    const result= {};
+    const result = {};
     const currentPayment = payment
     const currentVersion = payment.version
     let status = response?.resource?.data?.status
@@ -404,7 +406,6 @@ async function createCharge(data, params = {}, returnObject = false) {
 }
 
 async function processRefundSuccessNotification(event, payment, notification, ctpClient) {
-
     if (!notification.transaction || notification.from_webhook) {
         return {status: 'Failure'};
     }
@@ -480,18 +481,18 @@ async function processRefundSuccessNotification(event, payment, notification, ct
 
             result.status = 'Success'
             result.message = `Refunded ${refunded}`
+
+            addPowerboardLog({
+                powerboardChargeID: chargeId,
+                operation: powerboardStatus,
+                status: result.status,
+                message: result.message
+            })
         } catch (error) {
             result.status = 'Failure'
             result.message = error
         }
     }
-    addPowerboardLog({
-        powerboardChargeID: chargeId,
-        operation: powerboardStatus,
-        status: result.status,
-        message: result.message ?? ''
-    })
-
     return result
 
 }
@@ -607,8 +608,6 @@ function getNewStatuses(notification) {
     }
     return {status: powerboardPaymentStatus, paymentStatus: commerceToolsPaymentStatus, orderStatus: orderPaymentStatus}
 }
-
-
 
 
 function errorMessageToString(response) {

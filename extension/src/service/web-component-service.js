@@ -206,10 +206,8 @@ async function createStandalone3dsToken(data) {
 async function cardFlow({configurations, input, amount, currency, vaultToken, customerId, paymentObject}) {
     try {
         let result;
-
         switch (true) {
             case (configurations.card_card_save === 'Enable' && !!customerId):
-            case (configurations.card_card_save === 'Enable' && configurations.card_card_method_save !== 'Vault token' && input.SaveCard):
                 result = await cardCustomerCharge({
                     configurations,
                     input,
@@ -256,6 +254,17 @@ async function cardFlow({configurations, input, amount, currency, vaultToken, cu
                     paymentObject
                 });
                 break;
+            case (configurations.card_card_save === 'Enable' && configurations.card_card_method_save !== 'Vault token' && input.SaveCard):
+                result = await cardCustomerCharge({
+                    configurations,
+                    input,
+                    amount,
+                    currency,
+                    vaultToken,
+                    customerId,
+                    paymentObject
+                });
+                break;
             case (configurations.card_card_save === 'Enable' && configurations.card_card_method_save === 'Vault token' && input.SaveCard): {
                 const tokenData = await getVaultTokenData(vaultToken);
                 await saveUserToken({
@@ -288,6 +297,7 @@ async function cardFraud3DsCharge({
                                   }) {
     try {
         let result;
+
         switch (true) {
             case (configurations.card_3ds === 'In-built 3DS' && configurations.card_fraud === 'In-built Fraud'):
                 result = await cardFraud3DsInBuildCharge({configurations, input, amount, currency, vaultToken});
@@ -518,7 +528,6 @@ async function cardFraud3DsStandaloneCharge({configurations, input, amount, curr
         };
 
         const result = await createCharge(request, {action: 'standalone-fraud'});
-
         if (result.status === 'Success') {
             cacheData.billingAddress = {
                 firstName: billingFirstName,
@@ -1071,7 +1080,7 @@ function generateCustomerRequest(input, vaultToken, type, configurations) {
     return customerRequest;
 }
 
-async function createCustomerAndSaveVaultToken({configurations, input, vaultToken, type, paymentObject}) {
+async function createCustomerAndSaveVaultToken({configurations, input, vaultToken, type}) {
     let customerId = null;
     const customerRequest = generateCustomerRequest(input, vaultToken, type, configurations);
     const customerResponse = await createCustomer(customerRequest);

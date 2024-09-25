@@ -216,7 +216,7 @@ const OrdersHistory = () => {
         if (type === 'cancel-authorize') {
             const newStatus = type === 'capture' ? 'powerboard-paid' : 'powerboard-cancelled';
             const newStatusName = type === 'capture' ? 'Paid via PowerBoard' : 'Cancelled via PowerBoard';
-            const ctStatusName = type === 'capture' ? 'Paid' : 'Failed';
+            const ctStatusName = 'Paid';
 
             setLoading(prevState => ({
                 ...prevState,
@@ -263,7 +263,7 @@ const OrdersHistory = () => {
         if (type === 'cancel') {
             const newStatus = 'powerboard-cancelled';
             const newStatusName = 'Cancelled via PowerBoard'
-            const ctStatusName = 'Failed'
+            const ctStatusName = 'Paid'
 
             setLoading(prevState => ({
                 ...prevState,
@@ -330,6 +330,30 @@ const OrdersHistory = () => {
         const value = e.target.value;
         setTypedAmountRefund({ ...typedAmountRefund, [id]: value });
     };
+
+    const isVisibleCancel = (order) => {
+        if (typeof order.payment_source_type !== 'string'
+            || typeof order.status !== 'string'
+            || order.payment_source_type.toLowerCase() === 'afterpay v1') {
+            return false;
+        }
+
+        const isHidedMethod = [
+            'paypal smart',
+            'afterpay v2',
+            'zippay',
+        ].includes(order.payment_source_type.toLowerCase());
+
+        const isHidedStatus = [
+            "powerboard-paid",
+            'powerboard-p-paid',
+        ].includes(order.status.toLowerCase());
+
+        console.log(order.payment_source_type.toLowerCase(), isHidedMethod, isHidedStatus)
+
+        return !isHidedMethod && isHidedStatus;
+    }
+
 
     const handleTypedAmountCaptured = (e, id) => {
         const value = e.target.value;
@@ -607,10 +631,12 @@ const OrdersHistory = () => {
                                                                         }
                                                                     />
                                                                 )}
-                                                            <SecondaryButton
-                                                                label="Cancel Charge"
-                                                                onClick={() => handleOrderAction('cancel-refund', d.order_number)}
-                                                            />
+                                                            {isVisibleCancel(d) && (
+                                                                <SecondaryButton
+                                                                    label="Cancel Charge"
+                                                                    onClick={() => handleOrderAction('cancel-refund', d.order_number)}
+                                                                />
+                                                            )}
                                                         </>
                                                     ) : (
                                                         <>
@@ -619,7 +645,7 @@ const OrdersHistory = () => {
                                                                 onClick={() => handleOrderAction('refund-btn', d.order_number)}
                                                             />
 
-                                                            {d.status !== 'powerboard-refunded' && (
+                                                            {isVisibleCancel(d) && d.status !== 'powerboard-refunded' && (
                                                                 <PrimaryButton
                                                                     label="Cancel Charge"
                                                                     onClick={() => handleOrderAction('cancel', d.order_number)}

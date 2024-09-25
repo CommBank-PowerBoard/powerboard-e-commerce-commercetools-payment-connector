@@ -47,7 +47,7 @@ function getNotificationConfig() {
   }
 }
 
-async function decrypt(data, clientSecret) {
+function decrypt(data, clientSecret) {
   const keyArrayLen = clientSecret.length;
 
   return data.split("").map((dataElement, index) => {
@@ -65,11 +65,17 @@ async function getPowerboardConfig(type = 'all') {
       'powerboardConfigContainer'
     )
     if (responsePowerboardConfig.body.results) {
-      powerboardConfig = {}
-      const {results} = responsePowerboardConfig.body
+      powerboardConfig = {};
+      const results = responsePowerboardConfig.body.results.sort((a,b) => {
+        if (a.version > b.version){
+          return 1;
+        }
+        return -1;
+
+      });
       results.forEach((element) => {
-        powerboardConfig[element.key] = element.value
-      })
+        powerboardConfig[element.key] = element.value;
+      });
     }
 
     ["live","sandbox"].forEach((group) => [

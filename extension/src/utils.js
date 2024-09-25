@@ -9,7 +9,7 @@ import config from './config/config.js'
 const {createApplicationLogger} = loggers;
 
 let loggerInstance;
-const logActions = [];
+let logActions = [];
 
 function getLogger() {
     if (!loggerInstance) {
@@ -21,6 +21,9 @@ function getLogger() {
     return loggerInstance;
 }
 
+function clearLog(){
+    logActions = [];
+}
 function addPowerboardLog( data) {
     const date = new Date();
 
@@ -112,6 +115,7 @@ export default {
     sendResponse,
     getLogger,
     getLogsAction,
+    clearLog,
     handleUnexpectedPaymentError,
     readAndParseJsonFile,
     addPowerboardLog,

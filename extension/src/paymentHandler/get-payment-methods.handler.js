@@ -206,7 +206,7 @@ function buildResponseData(powerboardCredentials, connection, totalPrice, savedC
                 widget_style_bg_color: powerboardCredentials.widget.widget_style_bg_color,
                 widget_style_text_color: powerboardCredentials.widget.widget_style_text_color,
                 widget_style_border_color: powerboardCredentials.widget.widget_style_border_color,
-                widget_style_error_color: powerboardCredentials.widget.widget_style_success_color,
+                widget_style_error_color: powerboardCredentials.widget.widget_style_error_color,
                 widget_style_success_color: powerboardCredentials.widget.widget_style_success_color,
                 widget_style_font_size: powerboardCredentials.widget.widget_style_font_size,
                 widget_style_font_family: powerboardCredentials.widget.widget_style_font_family,
