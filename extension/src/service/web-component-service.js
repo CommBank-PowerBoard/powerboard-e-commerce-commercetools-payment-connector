@@ -1125,7 +1125,6 @@ async function createCustomerAndSaveVaultToken({configurations, input, vaultToke
             message: customerResponse.message
         });
     }
-
     return customerId;
 }
 

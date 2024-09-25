@@ -67,71 +67,72 @@ async function processNotification(
             }
         }
     }
-
     return result
 }
 
 async function processWebhook(event, payment, notification, ctpClient) {
     const result = {}
-    const oldStatus = payment.custom.fields?.PowerboardPaymentStatus ?? null;
-    if (oldStatus && oldStatus === "powerboard-cancelled") {
-        return result
-    }
-    const {status, paymentStatus, orderStatus} = getNewStatuses(notification)
-    let customStatus = status;
-    const chargeId = notification._id
-    const currentPayment = payment
-    const currentVersion = payment.version
-    const updateActions = [];
-    if (status === 'powerboard-paid') {
-        const capturedAmount = parseFloat(notification.transaction.amount) || 0
-        const orderAmount = calculateOrderAmount(payment);
-        customStatus = capturedAmount < orderAmount ? 'powerboard-p-paid' : 'powerboard-paid'
+    const order = await ctpClient.fetchOrderByNymber(ctpClient.builder.orders, payment.id)
+    if (order) {
+        const oldStatus = payment.custom.fields?.PowerboardPaymentStatus ?? null;
+        const {status, paymentStatus, orderStatus} = getNewStatuses(notification)
+        if (oldStatus === status) {
+            return result
+        }
+        let customStatus = status;
+        const chargeId = notification._id
+        const currentPayment = payment
+        const currentVersion = payment.version
+        const updateActions = [];
+        if (status === 'powerboard-paid') {
+            const capturedAmount = parseFloat(notification.transaction.amount) || 0
+            const orderAmount = calculateOrderAmount(payment);
+            customStatus = capturedAmount < orderAmount ? 'powerboard-p-paid' : 'powerboard-paid'
+            updateActions.push({
+                action: 'setCustomField',
+                name: 'CapturedAmount',
+                value: capturedAmount
+            })
+        }
+
+        let operation = notification.type
+        operation = operation ? operation.toLowerCase() : 'undefined'
+        operation = operation.charAt(0).toUpperCase() + operation.slice(1)
+
         updateActions.push({
             action: 'setCustomField',
-            name: 'CapturedAmount',
-            value: capturedAmount
+            name: 'PowerboardPaymentStatus',
+            value: customStatus
         })
+
+        updateActions.push({
+            action: 'setCustomField',
+            name: 'PaymentExtensionRequest',
+            value: JSON.stringify({
+                action: 'FromNotification',
+                request: {}
+            })
+        })
+        try {
+            await ctpClient.update(
+                ctpClient.builder.payments,
+                currentPayment.id,
+                currentVersion,
+                updateActions.concat(getLogActions())
+            )
+            await updateOrderStatus(ctpClient, currentPayment.id, paymentStatus, orderStatus);
+            result.status = 'Success'
+            addPowerboardLog({
+                powerboardChargeID: chargeId,
+                operation,
+                status: result.status,
+                message: result.message ?? ''
+            })
+        } catch (error) {
+            result.status = 'Failure'
+            result.message = error
+        }
     }
-
-    let operation = notification.type
-    operation = operation ? operation.toLowerCase() : 'undefined'
-    operation = operation.charAt(0).toUpperCase() + operation.slice(1)
-
-    updateActions.push({
-        action: 'setCustomField',
-        name: 'PowerboardPaymentStatus',
-        value: customStatus
-    })
-
-    updateActions.push({
-        action: 'setCustomField',
-        name: 'PaymentExtensionRequest',
-        value: JSON.stringify({
-            action: 'FromNotification',
-            request: {}
-        })
-    })
-    try {
-        await ctpClient.update(
-            ctpClient.builder.payments,
-            currentPayment.id,
-            currentVersion,
-            updateActions.concat(getLogActions())
-        )
-        await updateOrderStatus(ctpClient, currentPayment.id, paymentStatus, orderStatus);
-        result.status = 'Success'
-        addPowerboardLog({
-            powerboardChargeID: chargeId,
-            operation,
-            status: result.status,
-            message: result.message ?? ''
-        })
-    } catch (error) {
-        result.status = 'Failure'
-        result.message = error
-    }
-
     return result
 }
 
@@ -185,8 +186,8 @@ async function processFraudNotificationComplete(event, payment, notification, ct
     const fraudChargeId = notification._id ?? null;
     const cacheName = `powerboard_fraud_${notification.reference}`
     const result = {};
-
     let cacheData = await customObjectsUtils.getItem(cacheName)
+
     if (!cacheData) {
         return {message: 'Fraud data not found in local storage'};
     }
@@ -195,39 +196,27 @@ async function processFraudNotificationComplete(event, payment, notification, ct
     const isDirectCharge = cacheData.capture
     await customObjectsUtils.removeItem(cacheName)
     const response = await createCharge(request, {directCharge: isDirectCharge}, true)
+
     const updatedChargeId = extractChargeIdFromNotification(response);
 
     if (response?.error) {
         result.status = 'UnfulfilledCondition'
         result.message = `Can't charge.${errorMessageToString(response)}`
-
-        addPowerboardLog({
-            powerboardChargeID: updatedChargeId,
-            operation: 'Charge',
-            status: result.status,
-            message: result.message
-        })
         return result
     }
 
     if (cacheData._3ds) {
+
         const attachResponse = await createCharge({
             fraud_charge_id: fraudChargeId
-        }, {action: 'standalone-fraud-attach', updatedChargeId}, true)
+        }, {action: 'standalone-fraud-attach', chargeId: updatedChargeId}, true)
+
         if (attachResponse?.error) {
             result.status = 'UnfulfilledCondition'
             result.message = `Can't fraud attach.${errorMessageToString(attachResponse)}`
-
-            addPowerboardLog({
-                powerboardChargeID: updatedChargeId,
-                operation: 'Fraud Attach',
-                status: result.status,
-                message: result.message
-            })
             return result
         }
     }
-
     const returnHandleFraudNotification = await handleFraudNotification(response, updatedChargeId, ctpClient, payment)
     return returnHandleFraudNotification;
 }
