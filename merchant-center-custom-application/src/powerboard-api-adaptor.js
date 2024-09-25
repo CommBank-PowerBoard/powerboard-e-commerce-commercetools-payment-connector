@@ -29,7 +29,7 @@ class PowerboardApiAdaptor {
   }
 
   async fetchRegisteredEvents() {
-    const result = await this.callToAPI('v1/notifications', 'GET', null);
+    const result = await this.callToAPI('v1/notifications?limit=1000', 'GET', null);
     let allNotifications = [];
     if (result) {
       allNotifications = result.data.resource.data;
