@@ -12,6 +12,7 @@ class CommerceToolsAPIAdapter {
         this.accessToken = null;
         this.tokenExpirationTime = null;
         this.arrayPowerboardStatus = CHARGE_STATUSES;
+        this.sandboxApiURL = env.sandboxApiURL;
 
     }
 
@@ -118,7 +119,7 @@ class CommerceToolsAPIAdapter {
         const isLive = group === 'live';
         let secretKey = isToken ? data.credentials_access_key : data.credentials_secret_key;
         if (secretKey && notificationUrl) {
-            const powerboardApiAdaptor = new PowerboardApiAdaptor(isLive, isToken, secretKey, notificationUrl);
+            const powerboardApiAdaptor = new PowerboardApiAdaptor(isLive, isToken, secretKey, notificationUrl, this.sandboxApiURL);
             powerboardApiAdaptor.registerNotifications().catch(error => {
                 throw error.response.data.error;
             });
