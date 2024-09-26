@@ -183,7 +183,7 @@ async function processFraudNotification(event, payment, notification, ctpClient)
 
 async function processFraudNotificationComplete(event, payment, notification, ctpClient) {
 
-    let fraudChargeId = notification._id ?? null;
+    const fraudChargeId = notification._id ?? null;
     const cacheName = `powerboard_fraud_${notification.reference}`
     const result = {};
     let cacheData = await customObjectsUtils.getItem(cacheName)
